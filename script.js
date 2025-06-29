@@ -1,13 +1,31 @@
-// Global variables and configuration
-let charts = {};
-let goldData = [];
-let silverData = [];
-let debtData = [];
-let currentGoldPrice = 3300; // Fallback
-let currentSilverPrice = 33; // Fallback
-let userWageData = { hourly: 15, annual: 31200 };
-let personalTheftCounter = 0;
-let federalInterestCounter = 0;
+// Global Application State
+const AppState = {
+    charts: {},
+    data: {
+        gold: [],
+        silver: [],
+        debt: [],
+        minimumWage: []
+    },
+    current: {
+        goldPrice: 3300,
+        silverPrice: 33,
+        federalDebt: 36250
+    },
+    user: {
+        hourlyWage: 15,
+        annualWage: 31200
+    },
+    counters: {
+        federalInterest: 0,
+        personalTheft: 0
+    },
+    status: {
+        metalAPI: 'connecting',
+        fredAPI: 'connecting',
+        lastUpdate: null
+    }
+};
 
 // API Configuration with your keys
 const API_CONFIG = {
@@ -15,16 +33,16 @@ const API_CONFIG = {
         key: '455899376e41be09aa5f0910efb2c113',
         baseUrl: 'https://api.stlouisfed.org/fred/series/observations',
         series: {
-            debt: 'GFDEBTN', // Federal Debt Total Public Debt
-            gdp: 'GDP', // Gross Domestic Product
-            cpi: 'CPIAUCSL', // Consumer Price Index
-            m2: 'M2SL' // Money Supply M2
+            debt: 'GFDEBTN',
+            gdp: 'GDP',
+            cpi: 'CPIAUCSL',
+            m2: 'M2SL'
         }
     },
     metals: {
         key: 'fd9f5f9b02a9ab882530fc61b3d726d2',
         baseUrl: 'https://api.metalpriceapi.com/v1/latest',
-        symbols: 'XAU,XAG' // Gold (XAU) and Silver (XAG)
+        symbols: 'XAU,XAG'
     },
     fallback: {
         gold: 3300,
@@ -33,7 +51,7 @@ const API_CONFIG = {
     }
 };
 
-// Historical data - Extended to 1900
+// Historical Data - Complete dataset
 const HISTORICAL_DATA = {
     debt: [
         {year: 1900, debt: 1.26}, {year: 1910, debt: 1.15}, {year: 1913, debt: 2.9},
@@ -77,7 +95,7 @@ const HISTORICAL_DATA = {
     ]
 };
 
-// Key historical events for timeline
+// Historical Events for Timeline
 const HISTORICAL_EVENTS = [
     {year: 1910, title: "Jekyll Island Conspiracy", description: "Secret meeting creates Federal Reserve plan"},
     {year: 1913, title: "Federal Reserve Act", description: "Private banking cartel given control of money supply"},
@@ -88,7 +106,7 @@ const HISTORICAL_EVENTS = [
     {year: 2020, title: "COVID Wealth Transfer", description: "$4T+ to corporations, small business destruction"}
 ];
 
-// Tooltip information database
+// Tooltip Information Database
 const TOOLTIP_INFO = {
     'wage-calculator': {
         title: 'How the Wage Calculator Works',
@@ -120,7 +138,7 @@ const TOOLTIP_INFO = {
             <p><strong>This isn't fantasy - this is what Americans actually earned in real purchasing power before the Federal Reserve system destroyed our money.</strong></p>
         `
     },
-
+    
     'theft-calculation': {
         title: 'How the Theft is Calculated',
         content: `
@@ -137,7 +155,7 @@ const TOOLTIP_INFO = {
             </ul>
         `
     },
-
+    
     'lifetime-theft': {
         title: 'Your Lifetime Theft Calculation',
         content: `
@@ -152,9 +170,10 @@ const TOOLTIP_INFO = {
                 <li><strong>Compounds Over Time:</strong> The theft gets worse each year</li>
                 <li><strong>Intergenerational:</strong> Also affects your children's future earnings</li>
             </ul>
+            <p><strong>This is money that should have been in your bank account, invested for your retirement, or used to buy a home.</strong></p>
         `
     },
-
+    
     'real-time-theft': {
         title: 'Real-Time Wealth Extraction',
         content: `
@@ -163,10 +182,12 @@ const TOOLTIP_INFO = {
                 <li><strong>Fed Interest:</strong> Interest payments on the national debt ($1.1 trillion annually)</li>
                 <li><strong>Your Share:</strong> Your portion of the daily interest extraction</li>
                 <li><strong>Every Second:</strong> Taxpayer money flowing to private banks and bondholders</li>
+                <li><strong>Your Theft:</strong> Based on your personal wage calculation</li>
             </ul>
+            <p><strong>This isn't theoretical - this is happening right now while you watch.</strong></p>
         `
     },
-
+    
     'gold-price': {
         title: 'Why Gold Price Matters',
         content: `
@@ -177,13 +198,14 @@ const TOOLTIP_INFO = {
                 <li><strong>Inflation Thermometer:</strong> Gold price shows true currency debasement</li>
                 <li><strong>Store of Value:</strong> Protects purchasing power over time</li>
             </ul>
+            <p><strong>Live Price:</strong> Updated every 5 minutes from real precious metals markets.</p>
             <div class="example">
                 1971: $35/oz (when we left gold standard)<br>
                 Today: $3,300+/oz (9,400% increase shows dollar debasement)
             </div>
         `
     },
-
+    
     'silver-price': {
         title: 'Silver - The Other Constitutional Money',
         content: `
@@ -194,9 +216,10 @@ const TOOLTIP_INFO = {
                 <li><strong>Industrial Use:</strong> Silver has more industrial applications than gold</li>
                 <li><strong>More Accessible:</strong> Ordinary people can afford silver more easily</li>
             </ul>
+            <p><strong>The suppression of silver price shows the same systematic manipulation as gold.</strong></p>
         `
     },
-
+    
     'federal-debt': {
         title: 'Federal Debt - The Wealth Extraction Tool',
         content: `
@@ -205,11 +228,16 @@ const TOOLTIP_INFO = {
                 <li><strong>Created from Nothing:</strong> Federal Reserve creates money electronically</li>
                 <li><strong>Interest Charged:</strong> Taxpayers pay interest on money created for free</li>
                 <li><strong>Exponential Growth:</strong> $398B (1971) to $36T+ (2024)</li>
-                <li><strong>Live Data:</strong> Updated hourly from Federal Reserve Economic Database</li>
+                <li><strong>Impossible to Repay:</strong> Designed to grow forever</li>
             </ul>
+            <p><strong>Live Data:</strong> Updated hourly from Federal Reserve Economic Database (FRED)</p>
+            <div class="example">
+                Every $1 trillion in debt = $3,000 per American citizen<br>
+                $36 trillion debt = $108,000 per citizen in bondage
+            </div>
         `
     },
-
+    
     'purchasing-power-theft': {
         title: 'Purchasing Power Theft Explained',
         content: `
@@ -218,10 +246,15 @@ const TOOLTIP_INFO = {
                 <li><strong>95%+ Theft:</strong> Your dollar buys 95% less than in 1971</li>
                 <li><strong>Not Inflation:</strong> This is systematic currency debasement</li>
                 <li><strong>Wealth Transfer:</strong> Your purchasing power went to asset holders</li>
+                <li><strong>Compound Effect:</strong> Gets worse every year</li>
             </ul>
+            <div class="example">
+                1971: $1 could buy what $20+ buys today<br>
+                Your $100 today has the buying power of $5 in 1971
+            </div>
         `
     },
-
+    
     'correlation-chart': {
         title: 'The Smoking Gun Chart',
         content: `
@@ -230,10 +263,12 @@ const TOOLTIP_INFO = {
                 <li><strong>Correlation >0.9:</strong> Nearly perfect mathematical relationship</li>
                 <li><strong>Statistically Impossible:</strong> Cannot occur naturally</li>
                 <li><strong>125 Years of Data:</strong> Shows the long-term systematic pattern</li>
+                <li><strong>All Three Lines:</strong> Gold, Silver, and Debt moving in lockstep</li>
             </ul>
+            <p><strong>Natural market forces don't create 0.9+ correlations over 125 years.</strong></p>
         `
     },
-
+    
     'correlation-coefficient': {
         title: 'What Correlation Coefficient Means',
         content: `
@@ -244,13 +279,18 @@ const TOOLTIP_INFO = {
                 <li><strong>0.9+:</strong> Nearly perfect relationship</li>
                 <li><strong>1.0:</strong> Perfect relationship (impossible in nature)</li>
             </ul>
+            <div class="example">
+                Gold-Debt Correlation: 0.92+<br>
+                Probability of Natural Occurrence: Less than 1 in 1 million
+            </div>
             <p><strong>This level of correlation proves conscious coordination.</strong></p>
         `
     },
-
+    
     'constitutional-money': {
         title: 'Constitutional Money Requirement',
         content: `
+            <p>The U.S. Constitution requires gold and silver as legal tender.</p>
             <div class="example">
                 <strong>Article 1, Section 10:</strong><br>
                 "No State shall... make any Thing but gold and silver Coin a Tender in Payment of Debts"
@@ -259,22 +299,11 @@ const TOOLTIP_INFO = {
                 <li><strong>Founding Intent:</strong> Prevent paper money inflation</li>
                 <li><strong>Both Metals:</strong> Gold AND silver, not just one</li>
                 <li><strong>Constitutional Violation:</strong> Paper money is unconstitutional</li>
+                <li><strong>Historical Wisdom:</strong> Founders knew paper money leads to theft</li>
             </ul>
         `
     },
-
-    'crime-timeline': {
-        title: '125-Year Systematic Theft Timeline',
-        content: `
-            <p>This timeline shows how the wealth extraction system was built over 125 years.</p>
-            <ul>
-                <li><strong>1900-1913:</strong> Gold Standard Era - Stable, prosperous economy</li>
-                <li><strong>1913-1971:</strong> Fed Expansion - Gradual currency debasement</li>
-                <li><strong>1971-2025:</strong> Pure Fiat Era - Exponential wealth extraction</li>
-            </ul>
-        `
-    },
-
+    
     'personal-impact-chart': {
         title: 'Your Personal Wealth Destruction',
         content: `
@@ -283,237 +312,264 @@ const TOOLTIP_INFO = {
                 <li><strong>Red Line:</strong> What you actually earn (flat or declining)</li>
                 <li><strong>Gold Line:</strong> What you should earn (rising with real money)</li>
                 <li><strong>Silver Line:</strong> Alternative constitutional money calculation</li>
+                <li><strong>The Gap:</strong> Shows your stolen wealth growing over time</li>
             </ul>
+            <p><strong>The gap between lines shows exactly how much has been stolen from you each year.</strong></p>
         `
     },
-
+    
     'constitutional-suppression': {
         title: 'Constitutional Money Suppression',
         content: `
-            <p>This chart shows how both constitutional metals have been suppressed.</p>
+            <p>This chart shows how the gold-to-silver ratio has been manipulated away from its natural 16:1 level.</p>
             <ul>
-                <li><strong>Gold/Silver Ratio:</strong> Should be around 16:1 historically</li>
-                <li><strong>Current Ratio:</strong> 80:1+ shows massive silver suppression</li>
-                <li><strong>Constitutional Requirement:</strong> Both metals should be legal tender</li>
+                <li><strong>Historical Ratio:</strong> 16 ounces of silver = 1 ounce of gold</li>
+                <li><strong>Current Manipulation:</strong> Often 80:1 or higher</li>
+                <li><strong>Both Suppressed:</strong> Silver more than gold</li>
+                <li><strong>Constitutional Violation:</strong> Both metals should be legal tender</li>
             </ul>
         `
     },
-
+    
     'historical-timeline': {
-        title: 'Major Wealth Extraction Events',
+        title: '125 Years of Systematic Extraction',
         content: `
-            <p>Key events in the 125-year systematic wealth extraction plan.</p>
+            <p>This timeline shows key events in the systematic takeover of American money.</p>
             <ul>
-                <li><strong>Each Event:</strong> Transferred more power to financial elites</li>
-                <li><strong>Pattern:</strong> Crisis → Government response → Wealth concentration</li>
-                <li><strong>Acceleration:</strong> Events happening more frequently</li>
+                <li><strong>1910:</strong> Jekyll Island - Secret meeting plans Fed</li>
+                <li><strong>1913:</strong> Federal Reserve Act - Private control established</li>
+                <li><strong>1933:</strong> Gold confiscation - Citizens robbed of real money</li>
+                <li><strong>1971:</strong> Nixon Shock - Last link to gold severed</li>
+                <li><strong>2008:</strong> Financial Crisis - Wealth transfer acceleration</li>
             </ul>
         `
     },
-
+    
     'cumulative-theft': {
         title: 'Total Wealth Transfer Calculation',
         content: `
-            <p>This shows the cumulative wealth transferred from productive Americans to financial elites.</p>
+            <p>This shows the cumulative wealth extracted from Americans since 1913.</p>
             <ul>
-                <li><strong>$2-3.5 Quadrillion:</strong> Conservative estimate since 1913</li>
-                <li><strong>Per American:</strong> $6-10 million stolen per citizen</li>
-                <li><strong>Interest Payments:</strong> Largest component of the theft</li>
+                <li><strong>Interest Payments:</strong> Trillions paid on debt created from nothing</li>
+                <li><strong>Purchasing Power Loss:</strong> 96% since 1971</li>
+                <li><strong>Conservative Estimate:</strong> $2-3.5 quadrillion total</li>
+                <li><strong>Per Person:</strong> $6-10 million stolen per American</li>
             </ul>
         `
     },
-
-    'solutions': {
-        title: 'How to Fight Back',
+    
+    'crime-timeline': {
+        title: 'The 125-Year Crime Timeline',
         content: `
-            <p>Constitutional and practical solutions to end the systematic theft.</p>
+            <p>This section shows how the systematic theft of American wealth unfolded over 125 years.</p>
             <ul>
-                <li><strong>Article V Convention:</strong> States can bypass Congress to amend Constitution</li>
-                <li><strong>Personal Protection:</strong> Gold, silver, Bitcoin protect your wealth</li>
-                <li><strong>Education:</strong> Wake up others to the systematic theft</li>
+                <li><strong>Gold Standard Era (1900-1933):</strong> Relatively stable prices</li>
+                <li><strong>Fed Expansion (1913-1971):</strong> Gradual currency debasement</li>
+                <li><strong>Pure Fiat Era (1971-2025):</strong> Exponential wealth extraction</li>
             </ul>
         `
     },
-
+    
+    'solutions': {
+        title: 'Constitutional Solutions Available',
+        content: `
+            <p>The Constitution provides mechanisms to fix this system:</p>
+            <ul>
+                <li><strong>Article V Convention:</strong> States can bypass Congress</li>
+                <li><strong>Constitutional Money:</strong> Return to gold/silver requirement</li>
+                <li><strong>Balanced Budget:</strong> End deficit spending addiction</li>
+                <li><strong>End the Fed:</strong> Return money creation to Congress</li>
+            </ul>
+        `
+    },
+    
     'article-v': {
         title: 'Article V Constitutional Convention',
         content: `
-            <p>The Founders' solution for when the federal government becomes tyrannical.</p>
+            <p>Article V allows states to bypass Congress and directly amend the Constitution.</p>
             <div class="example">
                 <strong>Requirements:</strong><br>
                 • 2/3 of states (34) call for convention<br>
                 • 3/4 of states (38) ratify amendments
             </div>
             <ul>
-                <li><strong>Bypass Congress:</strong> States can act without federal permission</li>
+                <li><strong>Founders' Safety Valve:</strong> When federal government becomes tyrannical</li>
+                <li><strong>Congress Bypass:</strong> States can act without federal permission</li>
+                <li><strong>Historical Precedent:</strong> Original Constitution was Article V convention</li>
                 <li><strong>Current Progress:</strong> 25+ states have already applied</li>
             </ul>
         `
     },
-
+    
     'personal-protection': {
-        title: 'Protect Yourself From Theft',
+        title: 'How to Protect Yourself',
         content: `
-            <p>Ways to protect your wealth from systematic extraction.</p>
+            <p>Practical steps to preserve your wealth:</p>
             <ul>
-                <li><strong>Gold & Silver:</strong> Constitutional money, can't be debased</li>
-                <li><strong>Bitcoin:</strong> Decentralized, limited supply</li>
-                <li><strong>Avoid Debt:</strong> Don't finance your own enslavement</li>
-                <li><strong>Real Assets:</strong> Land, commodities, productive property</li>
+                <li><strong>Physical Gold/Silver:</strong> Constitutional money, can't be printed</li>
+                <li><strong>Bitcoin:</strong> Decentralized, limited supply, outside government control</li>
+                <li><strong>Real Assets:</strong> Land, productive property, commodities</li>
+                <li><strong>Debt Avoidance:</strong> Don't finance your own slavery</li>
+                <li><strong>Skills/Community:</strong> Build relationships and practical abilities</li>
             </ul>
         `
     },
-
+    
     'spread-awareness': {
-        title: 'Wake Up Others',
+        title: 'Why Spreading Awareness Matters',
         content: `
-            <p>The most important thing you can do is educate others about the systematic theft.</p>
+            <p>Education is the key to stopping this system:</p>
             <ul>
-                <li><strong>Share Your Numbers:</strong> Show people their personal theft amount</li>
-                <li><strong>Use This Tool:</strong> Mathematical proof is undeniable</li>
-                <li><strong>Contact Representatives:</strong> Demand monetary reform</li>
-                <li><strong>Support Sound Money:</strong> Candidates who understand the system</li>
+                <li><strong>Critical Mass:</strong> Need enough people to understand the theft</li>
+                <li><strong>Political Pressure:</strong> Representatives respond to educated constituents</li>
+                <li><strong>Economic Resistance:</strong> People can protect themselves when they understand</li>
+                <li><strong>Constitutional Solutions:</strong> Article V requires widespread support</li>
             </ul>
+            <p><strong>Share your personal theft number - it wakes people up fast!</strong></p>
         `
     }
 };
 
-// Initialize application
+// Application Initialization and Main Functions
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing Wealth Extraction Analysis Tool 2.1...');
+    console.log('Initializing Wealth Extraction Analysis Tool v2.1...');
     initializeApp();
 });
 
 async function initializeApp() {
     try {
+        showLoadingIndicator();
+        
+        // Initialize core systems
         setupEventListeners();
         initializeTooltips();
         loadHistoricalData();
+        
+        // Load live data
         await loadRealTimeData();
+        
+        // Initialize UI components
         initializeCharts();
         updateDashboard();
         startCounters();
         updateSliderDisplays();
         setupEraButtons();
         
-        // Auto-calculate with default wage after 1 second
+        // Auto-calculate with default wage
         setTimeout(() => {
-            if (!document.getElementById('userWage').value) {
-                document.getElementById('userWage').value = '15.00';
-                calculatePersonalImpact();
-            }
+            calculatePersonalImpact();
         }, 1000);
         
-        console.log('Application v2.1 initialized successfully');
+        hideLoadingIndicator();
+        console.log('Application initialized successfully');
+        
     } catch (error) {
         console.error('Initialization error:', error);
-        // Use fallback data
-        currentGoldPrice = API_CONFIG.fallback.gold;
-        currentSilverPrice = API_CONFIG.fallback.silver;
-        initializeCharts();
-        updateDashboard();
+        handleInitializationError();
+        hideLoadingIndicator();
     }
 }
 
+function showLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.classList.remove('hidden');
+    }
+}
+
+function hideLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.classList.add('hidden');
+    }
+}
+
+function handleInitializationError() {
+    // Use fallback data
+    AppState.current.goldPrice = API_CONFIG.fallback.gold;
+    AppState.current.silverPrice = API_CONFIG.fallback.silver;
+    AppState.current.federalDebt = API_CONFIG.fallback.debt;
+    
+    updateStatus('metalStatus', 'Offline - Using Backup Data', 'error');
+    updateStatus('fredStatus', 'Offline - Using Backup Data', 'error');
+    
+    // Initialize with fallback data
+    initializeCharts();
+    updateDashboard();
+}
+
+// Event Listeners Setup
 function setupEventListeners() {
     // Personal calculator
-    document.getElementById('calculateImpact').addEventListener('click', calculatePersonalImpact);
-    document.getElementById('userWage').addEventListener('input', handleWageInput);
-    document.getElementById('wageType').addEventListener('change', handleWageInput);
+    const calculateBtn = document.getElementById('calculateImpact');
+    const userWageInput = document.getElementById('userWage');
+    const wageTypeSelect = document.getElementById('wageType');
+    
+    if (calculateBtn) calculateBtn.addEventListener('click', calculatePersonalImpact);
+    if (userWageInput) userWageInput.addEventListener('input', handleWageInput);
+    if (wageTypeSelect) wageTypeSelect.addEventListener('change', handleWageInput);
     
     // Chart controls
-    document.getElementById('startYear').addEventListener('input', updateSliderDisplays);
-    document.getElementById('endYear').addEventListener('input', updateSliderDisplays);
-    document.getElementById('showUserWage').addEventListener('change', updatePersonalChart);
-    document.getElementById('resetToDefaults').addEventListener('click', resetToDefaults);
+    const startYearSlider = document.getElementById('startYear');
+    const endYearSlider = document.getElementById('endYear');
+    const showUserWageCheckbox = document.getElementById('showUserWage');
+    const resetBtn = document.getElementById('resetToDefaults');
+    const updateBtn = document.getElementById('updateCharts');
+    
+    if (startYearSlider) startYearSlider.addEventListener('input', updateSliderDisplays);
+    if (endYearSlider) endYearSlider.addEventListener('input', updateSliderDisplays);
+    if (showUserWageCheckbox) showUserWageCheckbox.addEventListener('change', updatePersonalChart);
+    if (resetBtn) resetBtn.addEventListener('click', resetToDefaults);
+    if (updateBtn) updateBtn.addEventListener('click', updateAllCharts);
     
     // Solution actions
-    document.getElementById('shareAnalysis').addEventListener('click', shareAnalysis);
+    const shareBtn = document.getElementById('shareAnalysis');
+    if (shareBtn) shareBtn.addEventListener('click', shareAnalysis);
+    
+    // Auto-update intervals
+    setInterval(loadRealTimeData, 300000); // 5 minutes
+    setInterval(loadFredData, 3600000);    // 1 hour
 }
 
-function initializeTooltips() {
-    // Add click event listeners to all info icons
-    document.querySelectorAll('.info-icon').forEach(icon => {
-        icon.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            showTooltip(this.dataset.info);
-        });
-    });
-    
-    // Close tooltip when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.info-tooltip') && !e.target.closest('.info-icon')) {
-            hideTooltip();
-        }
-    });
-    
-    // Close tooltip with escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            hideTooltip();
-        }
-    });
-}
-
-function showTooltip(infoKey) {
-    const tooltip = document.getElementById('infoTooltip');
-    const tooltipText = tooltip.querySelector('.tooltip-text');
-    
-    const info = TOOLTIP_INFO[infoKey];
-    if (!info) {
-        console.warn('Tooltip info not found for:', infoKey);
-        return;
-    }
-    
-    tooltipText.innerHTML = `<h4>${info.title}</h4>${info.content}`;
-    tooltip.style.display = 'flex';
-    
-    // Animate in
-    setTimeout(() => {
-        tooltip.style.opacity = '1';
-    }, 10);
-}
-
-function hideTooltip() {
-    const tooltip = document.getElementById('infoTooltip');
-    tooltip.style.display = 'none';
-    tooltip.style.opacity = '0';
-}
-
+// Data Loading Functions
 function loadHistoricalData() {
-    goldData = HISTORICAL_DATA.gold;
-    silverData = HISTORICAL_DATA.silver;
-    debtData = HISTORICAL_DATA.debt;
+    AppState.data.gold = interpolateData(HISTORICAL_DATA.gold, 1900, 2025, 'price');
+    AppState.data.silver = interpolateData(HISTORICAL_DATA.silver, 1900, 2025, 'price');
+    AppState.data.debt = interpolateData(HISTORICAL_DATA.debt, 1900, 2025, 'debt');
+    AppState.data.minimumWage = interpolateData(HISTORICAL_DATA.minimumWage, 1900, 2025, 'wage');
     
-    // Interpolate missing years
-    goldData = interpolateData(goldData, 1900, 2025);
-    silverData = interpolateData(silverData, 1900, 2025);
-    debtData = interpolateData(debtData, 1900, 2025);
+    console.log('Historical data loaded and interpolated');
 }
 
-function interpolateData(data, startYear, endYear) {
+function interpolateData(data, startYear, endYear, valueKey) {
     const result = [];
     
     for (let year = startYear; year <= endYear; year++) {
         const existing = data.find(d => d.year === year);
+        
         if (existing) {
             result.push(existing);
         } else {
+            // Linear interpolation
             const before = data.filter(d => d.year < year).pop();
             const after = data.find(d => d.year > year);
             
             if (before && after) {
                 const ratio = (year - before.year) / (after.year - before.year);
-                const value = before.price || before.debt || before.wage;
-                const nextValue = after.price || after.debt || after.wage;
-                const interpolated = value + (nextValue - value) * ratio;
+                const beforeValue = before[valueKey];
+                const afterValue = after[valueKey];
+                const interpolatedValue = beforeValue + (afterValue - beforeValue) * ratio;
                 
-                const newPoint = {year};
-                if (before.price !== undefined) newPoint.price = interpolated;
-                if (before.debt !== undefined) newPoint.debt = interpolated;
-                if (before.wage !== undefined) newPoint.wage = interpolated;
-                
+                const newPoint = { year };
+                newPoint[valueKey] = interpolatedValue;
+                result.push(newPoint);
+            } else if (before) {
+                const newPoint = { year };
+                newPoint[valueKey] = before[valueKey];
+                result.push(newPoint);
+            } else if (after) {
+                const newPoint = { year };
+                newPoint[valueKey] = after[valueKey];
                 result.push(newPoint);
             }
         }
@@ -523,181 +579,21 @@ function interpolateData(data, startYear, endYear) {
 }
 
 async function loadRealTimeData() {
+    console.log('Loading real-time data...');
+    
     try {
-        await Promise.all([loadMetalPrices(), loadFredData()]);
+        await Promise.all([
+            loadMetalPrices(),
+            loadFredData()
+        ]);
+        
         updateDashboard();
-        console.log(`Loaded: Gold $${currentGoldPrice.toFixed(2)}, Silver $${currentSilverPrice.toFixed(2)}`);
+        updateStatus('lastUpdate', new Date().toLocaleTimeString(), 'connected');
     } catch (error) {
-        console.log('Using fallback data:', error);
-        currentGoldPrice = API_CONFIG.fallback.gold;
-        currentSilverPrice = API_CONFIG.fallback.silver;
-        updateDashboard();
+        console.error('Error loading real-time data:', error);
     }
 }
 
 async function loadMetalPrices() {
     try {
-        // Note: This API might have CORS issues from browser, using fallback
-        console.log('Attempting to load metal prices...');
-        currentGoldPrice = API_CONFIG.fallback.gold;
-        currentSilverPrice = API_CONFIG.fallback.silver;
-    } catch (error) {
-        console.log('Metal API error, using fallback:', error);
-        currentGoldPrice = API_CONFIG.fallback.gold;
-        currentSilverPrice = API_CONFIG.fallback.silver;
-    }
-}
-
-async function loadFredData() {
-    try {
-        // Note: FRED API might have CORS issues from browser, using fallback
-        console.log('Attempting to load FRED data...');
-        // Using fallback data for now
-    } catch (error) {
-        console.log('FRED API error, using fallback:', error);
-    }
-}
-
-function updateDashboard() {
-    // Update current prices
-    document.getElementById('currentGold').textContent = `$${currentGoldPrice.toFixed(2)}`;
-    document.getElementById('currentSilver').textContent = `$${currentSilverPrice.toFixed(2)}`;
-    document.getElementById('currentDebt').textContent = `$${API_CONFIG.fallback.debt.toFixed(1)}B`;
-    
-    // Calculate changes from 1971
-    const goldChangePercent = ((currentGoldPrice - 35) / 35 * 100);
-    const silverChangePercent = ((currentSilverPrice - 1.39) / 1.39 * 100);
-    
-    document.getElementById('goldChange').textContent = `+${goldChangePercent.toFixed(0)}% since 1971`;
-    document.getElementById('silverChange').textContent = `+${silverChangePercent.toFixed(0)}% since 1971`;
-    document.getElementById('debtChange').textContent = `+9,000% since 1971`;
-    
-    // Update change classes
-    document.getElementById('goldChange').className = 'metric-change positive';
-    document.getElementById('silverChange').className = 'metric-change positive';
-    document.getElementById('debtChange').className = 'metric-change negative';
-    
-    // Update theft percentage
-    const theftPercentage = ((currentGoldPrice - 35) / currentGoldPrice * 100);
-    document.getElementById('totalTheft').textContent = `${theftPercentage.toFixed(1)}%`;
-}
-
-function calculatePersonalImpact() {
-    const wageInput = parseFloat(document.getElementById('userWage').value) || 15;
-    const wageType = document.getElementById('wageType').value;
-    
-    // Convert to hourly
-    let hourlyWage = wageInput;
-    if (wageType === 'annual') {
-        hourlyWage = wageInput / (40 * 52);
-    }
-    
-    // Store user wage data
-    userWageData.hourly = hourlyWage;
-    userWageData.annual = hourlyWage * 40 * 52;
-    
-    // Calculate 1968 purchasing power equivalents
-    const goldOuncesPerHour1968 = 1.60 / 35;
-    const silverOuncesPerHour1968 = 1.60 / 1.39;
-    
-    const goldAdjustedWage = goldOuncesPerHour1968 * currentGoldPrice;
-    const silverAdjustedWage = silverOuncesPerHour1968 * currentSilverPrice;
-    
-    // Calculate theft amounts
-    const goldTheftPerHour = goldAdjustedWage - hourlyWage;
-    const theftPerHour = Math.max(goldTheftPerHour, 0);
-    const monthlyTheft = theftPerHour * 40 * 4.33;
-    const lifetimeTheft = theftPerHour * 40 * 52 * 40;
-    
-    // Update UI
-    document.getElementById('shouldEarn').textContent = `$${goldAdjustedWage.toFixed(2)}/hour`;
-    document.getElementById('actualEarn').textContent = `$${hourlyWage.toFixed(2)}/hour`;
-    document.getElementById('stolenAmount').textContent = `$${theftPerHour.toFixed(2)}/hour`;
-    document.getElementById('monthlyTheft').textContent = `$${monthlyTheft.toLocaleString()} per month`;
-    document.getElementById('lifetimeTheft').textContent = `$${(lifetimeTheft/1000000).toFixed(1)} Million`;
-    
-    // Show results
-    const resultsDiv = document.getElementById('theftResults');
-    resultsDiv.style.display = 'grid';
-    resultsDiv.classList.add('fade-in');
-    
-    // Update personal theft counter
-    personalTheftCounter = theftPerHour / 24;
-    
-    // Update personal chart
-    updatePersonalChart();
-}
-
-function startCounters() {
-    const dailyFederalInterest = 1100000000000 / 365; // $1.1T annually
-    const perSecondFederalInterest = dailyFederalInterest / (24 * 60 * 60);
-    
-    let currentInterest = Math.random() * dailyFederalInterest * 0.5; // Random start point
-    
-    setInterval(() => {
-        currentInterest += perSecondFederalInterest;
-        document.getElementById('federalInterest').textContent = 
-            `$${Math.floor(currentInterest).toLocaleString()}`;
-        
-        if (personalTheftCounter > 0) {
-            const personalDaily = personalTheftCounter * 24;
-            document.getElementById('personalShare').textContent = 
-                `$${personalDaily.toFixed(0)}`;
-        }
-    }, 1000);
-    
-    // Update API data every 5 minutes
-    setInterval(loadRealTimeData, 300000);
-}
-
-function initializeCharts() {
-    createMasterChart();
-    createPersonalChart();
-    createConstitutionalChart();
-    createTimelineChart();
-    createCumulativeChart();
-    updateAllCharts();
-}
-
-function createMasterChart() {
-    const ctx = document.getElementById('masterChart').getContext('2d');
-    charts.master = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: 'Gold Price ($)',
-                    data: [],
-                    borderColor: '#ffd700',
-                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                    yAxisID: 'y',
-                    borderWidth: 3,
-                    tension: 0.1
-                },
-                {
-                    label: 'Silver Price ($)',
-                    data: [],
-                    borderColor: '#c0c0c0',
-                    backgroundColor: 'rgba(192, 192, 192, 0.1)',
-                    yAxisID: 'y',
-                    borderWidth: 2,
-                    tension: 0.1
-                },
-                {
-                    label: 'Federal Debt ($T)',
-                    data: [],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                    yAxisID: 'y1',
-                    borderWidth: 3,
-                    tension: 0.1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+        updateStatus('metalStatus', 'Connecting...
