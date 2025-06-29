@@ -38,6 +38,41 @@ body {
     padding: 0 20px;
 }
 
+/* Loading Indicator */
+.loading-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 54, 93, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: white;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-indicator.hidden {
+    display: none;
+}
+
 /* Info Tooltip System */
 .info-icon {
     display: inline-block;
@@ -69,9 +104,8 @@ body {
     height: 100%;
     z-index: 1000;
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 20px;
+    align-items: center;
 }
 
 .tooltip-overlay {
@@ -80,20 +114,20 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.7);
-    cursor: pointer;
+    background: rgba(0,0,0,0.5);
 }
 
 .tooltip-content {
     background: white;
     border-radius: 15px;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    max-width: 600px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    max-width: 90vw;
     max-height: 80vh;
     overflow-y: auto;
     padding: 2rem;
+    position: relative;
     z-index: 1001;
+    max-width: 600px;
 }
 
 .tooltip-close {
@@ -128,7 +162,7 @@ body {
     color: var(--primary-color);
     margin-bottom: 1rem;
     font-size: 1.3rem;
-    font-weight: 700;
+    padding-right: 2rem;
 }
 
 .tooltip-text p {
@@ -146,14 +180,12 @@ body {
 
 .tooltip-text strong {
     color: var(--primary-color);
-    font-weight: 600;
 }
 
 .tooltip-text .highlight {
-    background: #fff3cd;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid #ffeaa7;
+    background: rgba(243, 156, 18, 0.2);
+    padding: 2px 4px;
+    border-radius: 3px;
 }
 
 .tooltip-text .example {
@@ -226,6 +258,12 @@ body {
     font-weight: 600;
 }
 
+#userWage:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
+}
+
 #wageType {
     padding: 12px 15px;
     font-size: 1.1rem;
@@ -253,6 +291,10 @@ body {
     background: #c0392b;
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+.btn-shock:active {
+    transform: translateY(0);
 }
 
 /* Theft Results */
@@ -481,6 +523,7 @@ body {
     padding: 0.5rem;
     border-radius: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .era-btn {
@@ -535,10 +578,11 @@ input[type="range"] {
     outline: none;
     border-radius: 3px;
     cursor: pointer;
+    -webkit-appearance: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
+    -webkit-appearance: none;
     width: 18px;
     height: 18px;
     background: var(--primary-color);
@@ -556,6 +600,7 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 50%;
     border: 2px solid white;
     box-shadow: var(--shadow-sm);
+    border: none;
 }
 
 .range-separator {
@@ -592,6 +637,7 @@ input[type="checkbox"] {
 .btn-secondary {
     background: var(--bg-light);
     color: var(--text-dark);
+    border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
@@ -799,6 +845,42 @@ input[type="checkbox"] {
     font-size: 0.9rem;
 }
 
+/* Data Status */
+.data-status {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-label {
+    font-weight: 600;
+}
+
+.status-value {
+    font-family: 'Courier New', monospace;
+}
+
+.status-value.connected {
+    color: var(--success-color);
+}
+
+.status-value.error {
+    color: var(--danger-color);
+}
+
 /* Footer */
 footer {
     background: rgba(0, 0, 0, 0.1);
@@ -824,40 +906,6 @@ footer {
 .footer-content p {
     font-size: 0.9rem;
     line-height: 1.6;
-}
-
-/* Loading States */
-.loading {
-    position: relative;
-    color: var(--text-light);
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: -20px;
-    transform: translateY(-50%);
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--bg-light);
-    border-top: 2px solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: translateY(-50%) rotate(0deg); }
-    100% { transform: translateY(-50%) rotate(360deg); }
-}
-
-.updated {
-    animation: flash 2s ease-in-out;
-}
-
-@keyframes flash {
-    0%, 100% { background: transparent; }
-    50% { background: rgba(39, 174, 96, 0.2); }
 }
 
 /* Mobile Responsiveness */
@@ -924,10 +972,20 @@ footer {
         grid-template-columns: 1fr;
     }
     
+    .data-status {
+        flex-direction: column;
+        text-align: center;
+    }
+    
     .tooltip-content {
+        padding: 1rem;
         margin: 1rem;
-        padding: 1.5rem;
         max-height: calc(100vh - 2rem);
+    }
+    
+    .tooltip-text h4 {
+        font-size: 1.1rem;
+        padding-right: 2rem;
     }
 }
 
@@ -960,14 +1018,9 @@ footer {
         font-size: 1.3rem;
     }
     
-    .info-tooltip {
-        padding: 10px;
-    }
-    
     .tooltip-content {
-        margin: 0;
-        border-radius: 0;
-        height: 100%;
+        padding: 1rem;
+        margin: 0.5rem;
     }
 }
 
@@ -989,6 +1042,15 @@ footer {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+
+.updated {
+    animation: flash 2s ease-in-out;
+}
+
+@keyframes flash {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(39, 174, 96, 0.2); }
 }
 
 /* Utility Classes */
