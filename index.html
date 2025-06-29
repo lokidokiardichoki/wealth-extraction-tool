@@ -14,11 +14,17 @@
     <div class="container">
         <!-- Info Tooltip System -->
         <div id="infoTooltip" class="info-tooltip" style="display: none;">
-            <div class="tooltip-overlay" onclick="hideTooltip()"></div>
+            <div class="tooltip-overlay"></div>
             <div class="tooltip-content">
-                <span class="tooltip-close" onclick="hideTooltip()">&times;</span>
+                <span class="tooltip-close">&times;</span>
                 <div class="tooltip-text"></div>
             </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-indicator">
+            <div class="loading-spinner"></div>
+            <p>Loading real-time data...</p>
         </div>
 
         <!-- Shocking Personal Impact Section -->
@@ -34,7 +40,7 @@
                         <span class="info-icon" data-info="wage-calculator">ℹ️</span>
                     </h3>
                     <div class="input-group">
-                        <input type="number" id="userWage" placeholder="15.00" step="0.01" min="0">
+                        <input type="number" id="userWage" placeholder="15.00" step="0.01" min="0" max="1000">
                         <select id="wageType">
                             <option value="hourly">per hour</option>
                             <option value="annual">per year</option>
@@ -100,7 +106,7 @@
                     <span class="info-icon" data-info="gold-price">ℹ️</span>
                 </h3>
                 <div id="currentGold" class="metric-value">Loading...</div>
-                <div class="metric-change" id="goldChange">Loading...</div>
+                <div class="metric-change" id="goldChange">Updating...</div>
                 <div class="historical-note">1971: $35/oz</div>
             </div>
             <div class="metric-card silver">
@@ -108,7 +114,7 @@
                     <span class="info-icon" data-info="silver-price">ℹ️</span>
                 </h3>
                 <div id="currentSilver" class="metric-value">Loading...</div>
-                <div class="metric-change" id="silverChange">Loading...</div>
+                <div class="metric-change" id="silverChange">Updating...</div>
                 <div class="historical-note">1971: $1.39/oz</div>
             </div>
             <div class="metric-card debt">
@@ -116,7 +122,7 @@
                     <span class="info-icon" data-info="federal-debt">ℹ️</span>
                 </h3>
                 <div id="currentDebt" class="metric-value">Loading...</div>
-                <div class="metric-change" id="debtChange">Loading...</div>
+                <div id="debtChange" class="metric-change">Updating...</div>
                 <div class="historical-note">1971: $398B</div>
             </div>
             <div class="metric-card theft">
@@ -125,7 +131,7 @@
                 </h3>
                 <div id="totalTheft" class="metric-value">95.2%</div>
                 <div class="metric-change">Since 1971</div>
-                <div class="historical-note">Your money's buying power</div>
+                <div class="historical-note">Your wealth stolen</div>
             </div>
         </section>
 
@@ -160,6 +166,7 @@
                     Show My Personal Impact
                 </label>
                 <button id="resetToDefaults" class="btn-secondary">Reset View</button>
+                <button id="updateCharts" class="btn-primary">Update Charts</button>
             </div>
         </section>
 
@@ -283,6 +290,22 @@
                     </ul>
                     <button id="shareAnalysis" class="btn-primary">Share Your Analysis</button>
                 </div>
+            </div>
+        </section>
+
+        <!-- Data Status -->
+        <section class="data-status">
+            <div class="status-item">
+                <span class="status-label">Gold/Silver:</span>
+                <span id="metalStatus" class="status-value">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Federal Data:</span>
+                <span id="fredStatus" class="status-value">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Last Update:</span>
+                <span id="lastUpdate" class="status-value">Never</span>
             </div>
         </section>
 
