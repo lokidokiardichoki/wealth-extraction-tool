@@ -6,7 +6,6 @@
     <title>The $3.5 Quadrillion Theft - Your Personal Impact</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -15,8 +14,9 @@
     <div class="container">
         <!-- Info Tooltip System -->
         <div id="infoTooltip" class="info-tooltip" style="display: none;">
+            <div class="tooltip-overlay" onclick="hideTooltip()"></div>
             <div class="tooltip-content">
-                <span class="tooltip-close">&times;</span>
+                <span class="tooltip-close" onclick="hideTooltip()">&times;</span>
                 <div class="tooltip-text"></div>
             </div>
         </div>
@@ -82,11 +82,11 @@
                 </h3>
                 <div class="counter-grid">
                     <div class="counter-item">
-                        <div class="counter-value" id="federalInterest">$3,287,671</div>
+                        <div class="counter-value" id="federalInterest">$0</div>
                         <div class="counter-label">Fed Interest Today</div>
                     </div>
                     <div class="counter-item">
-                        <div class="counter-value" id="personalShare">$127</div>
+                        <div class="counter-value" id="personalShare">$0</div>
                         <div class="counter-label">Your Share Today</div>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
                     <span class="info-icon" data-info="gold-price">ℹ️</span>
                 </h3>
                 <div id="currentGold" class="metric-value">Loading...</div>
-                <div class="metric-change" id="goldChange"></div>
+                <div class="metric-change" id="goldChange">Loading...</div>
                 <div class="historical-note">1971: $35/oz</div>
             </div>
             <div class="metric-card silver">
@@ -108,14 +108,15 @@
                     <span class="info-icon" data-info="silver-price">ℹ️</span>
                 </h3>
                 <div id="currentSilver" class="metric-value">Loading...</div>
-                <div class="metric-change" id="silverChange"></div>
+                <div class="metric-change" id="silverChange">Loading...</div>
                 <div class="historical-note">1971: $1.39/oz</div>
             </div>
             <div class="metric-card debt">
                 <h3>Federal Debt (Live) 
                     <span class="info-icon" data-info="federal-debt">ℹ️</span>
                 </h3>
-                <div id="currentDebt" class="metric-value">$36.25T</div>
+                <div id="currentDebt" class="metric-value">Loading...</div>
+                <div class="metric-change" id="debtChange">Loading...</div>
                 <div class="historical-note">1971: $398B</div>
             </div>
             <div class="metric-card theft">
@@ -123,7 +124,8 @@
                     <span class="info-icon" data-info="purchasing-power-theft">ℹ️</span>
                 </h3>
                 <div id="totalTheft" class="metric-value">95.2%</div>
-                <div class="historical-note">Since 1971</div>
+                <div class="metric-change">Since 1971</div>
+                <div class="historical-note">Your money's buying power</div>
             </div>
         </section>
 
@@ -174,12 +176,12 @@
                 <canvas id="masterChart"></canvas>
                 <div class="chart-insights">
                     <div class="insight-item">
-                        <strong>Gold-Debt Correlation:</strong> <span id="goldDebtCorr">0.92+</span>
+                        <strong>Gold-Debt Correlation:</strong> <span id="goldDebtCorr">Calculating...</span>
                         <span class="insight-note">Statistically impossible coincidence</span>
                         <span class="info-icon" data-info="correlation-coefficient">ℹ️</span>
                     </div>
                     <div class="insight-item">
-                        <strong>Silver-Debt Correlation:</strong> <span id="silverDebtCorr">0.89+</span>
+                        <strong>Silver-Debt Correlation:</strong> <span id="silverDebtCorr">Calculating...</span>
                         <span class="insight-note">Constitutional money both suppressed</span>
                         <span class="info-icon" data-info="constitutional-money">ℹ️</span>
                     </div>
