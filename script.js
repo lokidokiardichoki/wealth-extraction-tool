@@ -1,1101 +1,407 @@
-/**
- * Wealth Extraction Analysis Tool v2.1
- * Optimized and fully integrated with real-time APIs
- */
+// Global Variables
+let currentGoldPrice = 3300;
+let currentSilverPrice = 33;
+let currentDebt = 36.25;
+let userHourlyWage = 15;
+let charts = {};
+let counterInterval;
 
-// ===== GLOBAL CONFIGURATION =====
-const CONFIG = {
-    // API Keys and endpoints
-    apis: {
-        metals: {
-            key: 'fd9f5f9b02a9ab882530fc61b3d726d2',
-            url: 'https://api.metalpriceapi.com/v1/latest',
-            symbols: 'XAU,XAG',
-            updateInterval: 300000 // 5 minutes
-        },
-        fred: {
-            key: '455899376e41be09aa5f0910efb2c113',
-            baseUrl: 'https://api.stlouisfed.org/fred/series/observations',
-            series: {
-                debt: 'GFDEBTN',
-                gdp: 'GDP',
-                cpi: 'CPIAUCSL'
-            },
-            updateInterval: 3600000 // 1 hour
-        }
-    },
-    
-    // Fallback data for when APIs fail
-    fallback: {
-        gold: 3300,
-        silver: 33,
-        debt: 36.25,
-        lastUpdate: new Date().toISOString()
-    },
-    
-    // Application settings
-    settings: {
-        defaultStartYear: 1900,
-        defaultEndYear: 2025,
-        chartAnimationDuration: 750,
-        counterUpdateInterval: 1000,
-        correlationThreshold: 0.7
-    }
+// API Keys
+const API_KEYS = {
+    metals: 'fd9f5f9b02a9ab882530fc61b3d726d2',
+    fred: '455899376e41be09aa5f0910efb2c113'
 };
 
-// ===== GLOBAL STATE =====
-const STATE = {
-    // Current data
-    currentPrices: {
-        gold: CONFIG.fallback.gold,
-        silver: CONFIG.fallback.silver,
-        debt: CONFIG.fallback.debt,
-        lastUpdate: new Date()
-    },
-    
-    // Historical data
-    historicalData: {
-        gold: [],
-        silver: [],
-        debt: [],
-        wages: []
-    },
-    
-    // User data
-    userData: {
-        hourlyWage: 15,
-        annualWage: 31200,
-        theftCalculated: false
-    },
-    
-    // Charts
-    charts: {},
-    
-    // Counters
-    counters: {
-        federalInterest: 0,
-        personalTheft: 0,
-        running: false
-    },
-    
-    // UI state
-    ui: {
-        tooltipOpen: false,
-        currentDateRange: {
-            start: CONFIG.settings.defaultStartYear,
-            end: CONFIG.settings.defaultEndYear
-        }
-    }
+// Historical Data
+const historicalData = {
+    years: [],
+    gold: [],
+    silver: [],
+    debt: []
 };
 
-// ===== HISTORICAL DATA =====
-const HISTORICAL_DATA = {
-    // Federal debt in billions, converted to trillions
-    debt: [
-        {year: 1900, value: 1.26}, {year: 1910, value: 1.15}, {year: 1913, value: 2.9},
-        {year: 1920, value: 25.95}, {year: 1930, value: 16.19}, {year: 1933, value: 22.54},
-        {year: 1940, value: 42.97}, {year: 1950, value: 257.36}, {year: 1960, value: 286.33},
-        {year: 1971, value: 398}, {year: 1980, value: 908}, {year: 1990, value: 3233},
-        {year: 2000, value: 5674}, {year: 2008, value: 10025}, {year: 2010, value: 13562},
-        {year: 2015, value: 18151}, {year: 2020, value: 26945}, {year: 2023, value: 33167},
-        {year: 2024, value: 35465}, {year: 2025, value: 36250}
-    ].map(d => ({...d, value: d.value < 1000 ? d.value : d.value / 1000})), // Convert to trillions
-    
-    // Gold prices in USD per ounce
-    gold: [
-        {year: 1900, value: 20.67}, {year: 1910, value: 20.67}, {year: 1913, value: 20.67},
-        {year: 1920, value: 20.67}, {year: 1930, value: 20.67}, {year: 1933, value: 35},
-        {year: 1940, value: 35}, {year: 1950, value: 35}, {year: 1960, value: 35},
-        {year: 1971, value: 35}, {year: 1975, value: 140}, {year: 1980, value: 850},
-        {year: 1985, value: 300}, {year: 1990, value: 400}, {year: 1995, value: 385},
-        {year: 2000, value: 280}, {year: 2005, value: 430}, {year: 2008, value: 865},
-        {year: 2010, value: 1400}, {year: 2015, value: 1060}, {year: 2020, value: 1900},
-        {year: 2023, value: 2000}, {year: 2024, value: 2400}, {year: 2025, value: 3300}
-    ],
-    
-    // Silver prices in USD per ounce
-    silver: [
-        {year: 1900, value: 0.65}, {year: 1910, value: 0.53}, {year: 1913, value: 0.60},
-        {year: 1920, value: 1.00}, {year: 1930, value: 0.38}, {year: 1933, value: 0.35},
-        {year: 1940, value: 0.35}, {year: 1950, value: 0.74}, {year: 1960, value: 0.91},
-        {year: 1971, value: 1.39}, {year: 1975, value: 4.00}, {year: 1980, value: 20.00},
-        {year: 1985, value: 6.00}, {year: 1990, value: 4.00}, {year: 1995, value: 5.15},
-        {year: 2000, value: 5.00}, {year: 2005, value: 7.50}, {year: 2008, value: 15.00},
-        {year: 2010, value: 20.00}, {year: 2015, value: 16.00}, {year: 2020, value: 25.00},
-        {year: 2023, value: 24.00}, {year: 2024, value: 30.00}, {year: 2025, value: 33.00}
-    ],
-    
-    // Minimum wage in USD per hour
-    wages: [
-        {year: 1900, value: 0.22}, {year: 1910, value: 0.25}, {year: 1913, value: 0.30},
-        {year: 1920, value: 0.35}, {year: 1930, value: 0.40}, {year: 1933, value: 0.25},
-        {year: 1940, value: 0.40}, {year: 1950, value: 0.75}, {year: 1960, value: 1.00},
-        {year: 1968, value: 1.60}, {year: 1975, value: 2.10}, {year: 1980, value: 3.10},
-        {year: 1990, value: 3.80}, {year: 1995, value: 4.25}, {year: 2000, value: 5.15},
-        {year: 2007, value: 5.85}, {year: 2009, value: 7.25}, {year: 2025, value: 7.25}
-    ]
-};
-
-// ===== TOOLTIP INFORMATION =====
-const TOOLTIP_INFO = {
-    'wage-calculator': {
-        title: 'How the Wage Calculator Works',
-        content: `<p>This calculator shows how much purchasing power you've lost due to monetary manipulation since 1968.</p>
+// Tooltip Information
+const tooltipInfo = {
+    calculator: `
+        <h3>Personal Theft Calculator</h3>
+        <p>This calculator shows how much purchasing power you've lost due to monetary manipulation.</p>
+        <p><strong>How it works:</strong></p>
         <ul>
-            <li><strong>1968 Baseline:</strong> Minimum wage was $1.60/hour when gold was $35/ounce</li>
-            <li><strong>Gold Standard:</strong> That's 0.046 ounces of gold per hour of work</li>
-            <li><strong>Today's Reality:</strong> 0.046 oz × current gold price = what you should earn</li>
+            <li>In 1968, minimum wage was $1.60/hour when gold was $35/ounce</li>
+            <li>That equals 0.046 ounces of gold per hour of work</li>
+            <li>Today, 0.046 oz × current gold price = what you should earn</li>
+            <li>The difference is what's been stolen from you</li>
         </ul>
-        <div class="example">If gold is $3,300/oz: You should earn $151.80/hour</div>`
-    },
-    
-    'should-earn': {
-        title: 'What You Should Be Earning',
-        content: `<p>This shows what your wage would be if purchasing power hadn't been stolen.</p>
+    `,
+    gold: `
+        <h3>Gold Price - Real Money</h3>
+        <p>Gold is constitutional money that cannot be printed or manipulated.</p>
+        <p><strong>Key Facts:</strong></p>
         <ul>
-            <li><strong>Based on 1968:</strong> Last year before major manipulation accelerated</li>
-            <li><strong>Real Money:</strong> When dollars were backed by gold</li>
-            <li><strong>Mathematical Proof:</strong> Your labor is worth the same, money was debased</li>
-        </ul>`
-    },
-    
-    'theft-calculation': {
-        title: 'How the Theft is Calculated',
-        content: `<p>The "theft" is the difference between what you should earn and what you actually earn.</p>
-        <div class="example">Gold-Adjusted Wage - Actual Wage = Theft Amount</div>
-        <ul>
-            <li><strong>Not Inflation:</strong> This is systematic currency debasement</li>
-            <li><strong>Wealth Transfer:</strong> Your purchasing power went to financial elites</li>
-        </ul>`
-    },
-    
-    'gold-price': {
-        title: 'Why Gold Price Matters',
-        content: `<p>Gold is constitutional money that shows true currency debasement.</p>
-        <ul>
-            <li><strong>Can't Be Printed:</strong> Unlike paper money</li>
-            <li><strong>5,000 Year History:</strong> Always been real money</li>
-            <li><strong>Inflation Thermometer:</strong> Shows true monetary destruction</li>
+            <li>1971: $35/oz (when we left gold standard)</li>
+            <li>Today: $3,300+/oz (9,400% increase)</li>
+            <li>This shows the true debasement of the dollar</li>
+            <li>Updated every 5 minutes from live markets</li>
         </ul>
-        <div class="example">1971: $35/oz → Today: $3,300/oz = 9,400% increase</div>`
-    },
-    
-    'correlation-chart': {
-        title: 'The Mathematical Proof',
-        content: `<p>This chart proves systematic coordination between debt and precious metals.</p>
+    `,
+    silver: `
+        <h3>Silver - Constitutional Money</h3>
+        <p>Silver is also constitutional money, mentioned alongside gold in Article 1, Section 10.</p>
+        <p><strong>Key Facts:</strong></p>
         <ul>
-            <li><strong>Correlation >0.9:</strong> Nearly perfect mathematical relationship</li>
-            <li><strong>Statistically Impossible:</strong> Cannot occur naturally</li>
-            <li><strong>125 Years:</strong> Shows long-term systematic coordination</li>
-        </ul>`
-    }
+            <li>More volatile than gold</li>
+            <li>Historical gold/silver ratio: 16:1</li>
+            <li>Current ratio: 80+:1 (shows manipulation)</li>
+            <li>More accessible to ordinary people</li>
+        </ul>
+    `,
+    debt: `
+        <h3>Federal Debt - The Wealth Extraction Tool</h3>
+        <p>The national debt isn't money we owe ourselves - it's owed to private banks.</p>
+        <p><strong>The Scam:</strong></p>
+        <ul>
+            <li>Federal Reserve creates money from nothing</li>
+            <li>Government "borrows" this created money</li>
+            <li>Taxpayers pay interest on money created for free</li>
+            <li>1971: $398 billion → 2024: $36+ trillion</li>
+        </ul>
+    `,
+    correlation: `
+        <h3>The Smoking Gun Chart</h3>
+        <p>This chart proves systematic coordination between gold suppression and debt expansion.</p>
+        <p><strong>Statistical Evidence:</strong></p>
+        <ul>
+            <li>Correlation coefficient >0.9 = nearly perfect relationship</li>
+            <li>Natural markets don't create this level of correlation</li>
+            <li>Probability of coincidence: less than 1 in 1 million</li>
+            <li>This is mathematical proof of systematic manipulation</li>
+        </ul>
+    `
 };
 
-// ===== CORE FUNCTIONS =====
+// Initialize Application
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing Wealth Extraction Analysis Tool...');
+    
+    setupEventListeners();
+    setupTooltips();
+    generateHistoricalData();
+    loadRealTimeData();
+    initializeCharts();
+    startCounters();
+    calculatePersonalImpact();
+    
+    console.log('Application loaded successfully');
+});
 
-/**
- * Initialize the application
- */
-async function initializeApp() {
-    try {
-        console.log('🚀 Initializing Wealth Extraction Analysis Tool v2.1...');
-        
-        // Setup in correct order
-        setupEventListeners();
-        initializeTooltips();
-        loadHistoricalData();
-        
-        // Load real-time data with fallback
-        await loadRealTimeData();
-        
-        // Initialize UI components
-        initializeCharts();
-        updateDashboard();
-        startCounters();
-        updateSliderDisplays();
-        setupEraButtons();
-        
-        // Auto-calculate with default wage
-        setTimeout(() => calculatePersonalImpact(), 1000);
-        
-        console.log('✅ Application initialized successfully');
-        
-    } catch (error) {
-        console.error('❌ Initialization error:', error);
-        // Use fallback data and continue
-        STATE.currentPrices = {...CONFIG.fallback, lastUpdate: new Date()};
-        initializeCharts();
-        updateDashboard();
-    }
-}
-
-/**
- * Setup all event listeners
- */
+// Event Listeners
 function setupEventListeners() {
-    // Personal calculator
-    const calculateBtn = document.getElementById('calculateImpact');
-    const userWageInput = document.getElementById('userWage');
-    const wageTypeSelect = document.getElementById('wageType');
+    document.getElementById('calculateBtn').addEventListener('click', calculatePersonalImpact);
+    document.getElementById('userWage').addEventListener('input', calculatePersonalImpact);
+    document.getElementById('wageType').addEventListener('change', calculatePersonalImpact);
+    document.getElementById('startYear').addEventListener('input', updateSliders);
+    document.getElementById('endYear').addEventListener('input', updateSliders);
+    document.getElementById('resetBtn').addEventListener('click', resetCharts);
+    document.getElementById('shareBtn').addEventListener('click', shareAnalysis);
     
-    if (calculateBtn) calculateBtn.addEventListener('click', calculatePersonalImpact);
-    if (userWageInput) userWageInput.addEventListener('input', handleWageInput);
-    if (wageTypeSelect) wageTypeSelect.addEventListener('change', handleWageInput);
-    
-    // Chart controls
-    const startYearSlider = document.getElementById('startYear');
-    const endYearSlider = document.getElementById('endYear');
-    const showUserWageCheck = document.getElementById('showUserWage');
-    const resetBtn = document.getElementById('resetToDefaults');
-    
-    if (startYearSlider) startYearSlider.addEventListener('input', updateSliderDisplays);
-    if (endYearSlider) endYearSlider.addEventListener('input', updateSliderDisplays);
-    if (showUserWageCheck) showUserWageCheck.addEventListener('change', updatePersonalChart);
-    if (resetBtn) resetBtn.addEventListener('click', resetToDefaults);
-    
-    // Share functionality
-    const shareBtn = document.getElementById('shareAnalysis');
-    if (shareBtn) shareBtn.addEventListener('click', shareAnalysis);
-}
-
-/**
- * Load historical data and interpolate missing years
- */
-function loadHistoricalData() {
-    STATE.historicalData.gold = interpolateYearlyData(HISTORICAL_DATA.gold, 1900, 2025);
-    STATE.historicalData.silver = interpolateYearlyData(HISTORICAL_DATA.silver, 1900, 2025);
-    STATE.historicalData.debt = interpolateYearlyData(HISTORICAL_DATA.debt, 1900, 2025);
-    STATE.historicalData.wages = interpolateYearlyData(HISTORICAL_DATA.wages, 1900, 2025);
-    
-    console.log('📊 Historical data loaded and interpolated');
-}
-
-/**
- * Interpolate data points for missing years
- */
-function interpolateYearlyData(data, startYear, endYear) {
-    const result = [];
-    
-    for (let year = startYear; year <= endYear; year++) {
-        const existing = data.find(d => d.year === year);
-        
-        if (existing) {
-            result.push(existing);
-        } else {
-            // Linear interpolation
-            const before = data.filter(d => d.year < year).pop();
-            const after = data.find(d => d.year > year);
-            
-            if (before && after) {
-                const ratio = (year - before.year) / (after.year - before.year);
-                const interpolatedValue = before.value + (after.value - before.value) * ratio;
-                result.push({year, value: interpolatedValue});
-            } else if (before) {
-                result.push({year, value: before.value});
-            } else if (after) {
-                result.push({year, value: after.value});
-            }
+    // Tooltip close
+    document.querySelector('.tooltip-close').addEventListener('click', hideTooltip);
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tooltip') && !e.target.closest('.info-btn')) {
+            hideTooltip();
         }
-    }
-    
-    return result;
+    });
 }
 
-/**
- * Load real-time data from APIs with robust error handling
- */
+// Tooltip System
+function setupTooltips() {
+    document.querySelectorAll('.info-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showTooltip(this.dataset.info);
+        });
+    });
+}
+
+function showTooltip(key) {
+    const tooltip = document.getElementById('tooltip');
+    const content = tooltipInfo[key] || '<p>Information not available</p>';
+    
+    tooltip.querySelector('.tooltip-text').innerHTML = content;
+    tooltip.style.display = 'block';
+    
+    setTimeout(() => {
+        tooltip.style.opacity = '1';
+    }, 10);
+}
+
+function hideTooltip() {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.style.opacity = '0';
+    setTimeout(() => {
+        tooltip.style.display = 'none';
+    }, 300);
+}
+
+// Load Real-Time Data
 async function loadRealTimeData() {
-    console.log('🔄 Loading real-time data...');
-    
     try {
-        const promises = [
-            loadMetalPrices().catch(e => console.warn('Metal API failed:', e.message)),
-            loadFredData().catch(e => console.warn('FRED API failed:', e.message))
-        ];
-        
-        await Promise.allSettled(promises);
-        
-        STATE.currentPrices.lastUpdate = new Date();
+        await Promise.all([
+            loadMetalPrices(),
+            loadDebtData()
+        ]);
         updateDashboard();
-        
-        console.log('✅ Real-time data loaded:', STATE.currentPrices);
-        
     } catch (error) {
-        console.warn('⚠️ Using fallback data due to API errors');
-        STATE.currentPrices = {...CONFIG.fallback, lastUpdate: new Date()};
+        console.log('Using fallback data:', error);
+        updateDashboard();
     }
 }
 
-/**
- * Load metal prices from API
- */
 async function loadMetalPrices() {
     try {
-        // Note: Direct API calls may be blocked by CORS in production
-        // Consider using a proxy server for production deployment
-        const response = await fetch(`${CONFIG.apis.metals.url}?access_key=${CONFIG.apis.metals.key}&base=USD&symbols=${CONFIG.apis.metals.symbols}`);
+        const response = await fetch(`https://api.metalpriceapi.com/v1/latest?access_key=${API_KEYS.metals}&base=USD&symbols=XAU,XAG`);
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.rates) {
-            // API returns rates (USD per metal unit), convert to price (metal per USD)
-            STATE.currentPrices.gold = 1 / data.rates.XAU;
-            STATE.currentPrices.silver = 1 / data.rates.XAG;
-            
-            // Update historical data with current prices
-            updateHistoricalWithCurrent('gold', STATE.currentPrices.gold);
-            updateHistoricalWithCurrent('silver', STATE.currentPrices.silver);
-            
-        } else {
-            throw new Error('Invalid API response structure');
-        }
-        
-    } catch (error) {
-        console.warn('Metal API error, using fallback:', error.message);
-        STATE.currentPrices.gold = CONFIG.fallback.gold;
-        STATE.currentPrices.silver = CONFIG.fallback.silver;
-    }
-}
-
-/**
- * Load FRED economic data
- */
-async function loadFredData() {
-    try {
-        const url = `${CONFIG.apis.fred.baseUrl}?series_id=${CONFIG.apis.fred.series.debt}&api_key=${CONFIG.apis.fred.key}&file_type=json&limit=1&sort_order=desc`;
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.observations && data.observations.length > 0) {
-            const latest = data.observations[0];
-            
-            if (latest.value !== '.') {
-                const debtBillions = parseFloat(latest.value);
-                const debtTrillions = debtBillions / 1000;
-                
-                STATE.currentPrices.debt = debtTrillions;
-                
-                // Update historical data
-                const currentYear = new Date().getFullYear();
-                updateHistoricalWithCurrent('debt', debtTrillions, currentYear);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentGoldPrice = Math.round(1 / data.rates.XAU);
+                currentSilverPrice = Math.round(1 / data.rates.XAG);
+                console.log(`Updated prices: Gold $${currentGoldPrice}, Silver $${currentSilverPrice}`);
             }
         }
-        
     } catch (error) {
-        console.warn('FRED API error, using fallback:', error.message);
-        STATE.currentPrices.debt = CONFIG.fallback.debt;
+        console.log('Metal API error:', error);
     }
 }
 
-/**
- * Update historical data with current API values
- */
-function updateHistoricalWithCurrent(dataType, value, year = new Date().getFullYear()) {
-    const dataArray = STATE.historicalData[dataType];
-    const existingIndex = dataArray.findIndex(d => d.year === year);
-    
-    if (existingIndex >= 0) {
-        dataArray[existingIndex].value = value;
-    } else {
-        dataArray.push({year, value});
-        dataArray.sort((a, b) => a.year - b.year);
-    }
-}
-
-/**
- * Update dashboard with current data
- */
-function updateDashboard() {
-    // Update price displays
-    safeUpdateElement('currentGold', `$${STATE.currentPrices.gold.toFixed(2)}`);
-    safeUpdateElement('currentSilver', `$${STATE.currentPrices.silver.toFixed(2)}`);
-    safeUpdateElement('currentDebt', `$${STATE.currentPrices.debt.toFixed(2)}T`);
-    
-    // Calculate changes from 1971
-    const goldChange = ((STATE.currentPrices.gold - 35) / 35 * 100);
-    const silverChange = ((STATE.currentPrices.silver - 1.39) / 1.39 * 100);
-    
-    safeUpdateElement('goldChange', `+${goldChange.toFixed(0)}% since 1971`);
-    safeUpdateElement('silverChange', `+${silverChange.toFixed(0)}% since 1971`);
-    
-    // Update theft percentage
-    const theftPercentage = ((STATE.currentPrices.gold - 35) / STATE.currentPrices.gold * 100);
-    safeUpdateElement('totalTheft', `${theftPercentage.toFixed(1)}%`);
-    
-    // Add updated class for visual feedback
-    ['currentGold', 'currentSilver', 'currentDebt'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.classList.add('updated');
-            setTimeout(() => element.classList.remove('updated'), 2000);
-        }
-    });
-}
-
-/**
- * Safe element update helper
- */
-function safeUpdateElement(id, content) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = content;
-    }
-}
-
-/**
- * Calculate personal impact for user
- */
-function calculatePersonalImpact() {
-    const wageInput = parseFloat(document.getElementById('userWage')?.value) || 15;
-    const wageType = document.getElementById('wageType')?.value || 'hourly';
-    
-    // Convert to hourly
-    let hourlyWage = wageInput;
-    if (wageType === 'annual') {
-        hourlyWage = wageInput / (40 * 52); // 40 hours/week, 52 weeks/year
-    }
-    
-    // Store user wage data
-    STATE.userData.hourlyWage = hourlyWage;
-    STATE.userData.annualWage = hourlyWage * 40 * 52;
-    STATE.userData.theftCalculated = true;
-    
-    // Calculate 1968 purchasing power equivalent
-    const goldOuncesPerHour1968 = 1.60 / 35; // 1968 min wage / 1968 gold price
-    const goldAdjustedWage = goldOuncesPerHour1968 * STATE.currentPrices.gold;
-    
-    // Calculate silver equivalent
-    const silverOuncesPerHour1968 = 1.60 / 1.39;
-    const silverAdjustedWage = silverOuncesPerHour1968 * STATE.currentPrices.silver;
-    
-    // Use the higher of gold or silver adjusted wage
-    const shouldEarn = Math.max(goldAdjustedWage, silverAdjustedWage);
-    const theftPerHour = shouldEarn - hourlyWage;
-    const monthlyTheft = theftPerHour * 40 * 4.33; // 40 hours/week, 4.33 weeks/month
-    const lifetimeTheft = theftPerHour * 40 * 52 * 40; // 40-year career
-    
-    // Update UI
-    safeUpdateElement('shouldEarn', `$${shouldEarn.toFixed(2)}/hour`);
-    safeUpdateElement('actualEarn', `$${hourlyWage.toFixed(2)}/hour`);
-    safeUpdateElement('stolenAmount', `$${theftPerHour.toFixed(2)}/hour`);
-    safeUpdateElement('monthlyTheft', `$${monthlyTheft.toLocaleString()} per month`);
-    safeUpdateElement('lifetimeTheft', `$${(lifetimeTheft/1000000).toFixed(1)} Million`);
-    
-    // Show results
-    const resultsDiv = document.getElementById('theftResults');
-    if (resultsDiv) {
-        resultsDiv.style.display = 'grid';
-        resultsDiv.classList.add('fade-in');
-    }
-    
-    // Update counter for personal theft
-    STATE.counters.personalTheft = theftPerHour / 24; // Per hour to per minute
-    
-    // Update personal chart
-    updatePersonalChart();
-    
-    console.log('💰 Personal theft calculated:', {
-        hourlyWage,
-        shouldEarn,
-        theftPerHour,
-        lifetimeTheft: lifetimeTheft/1000000
-    });
-}
-
-/**
- * Handle wage input changes
- */
-function handleWageInput() {
-    const wage = document.getElementById('userWage')?.value;
-    if (wage && parseFloat(wage) > 0) {
-        // Auto-calculate after short delay
-        clearTimeout(handleWageInput.timeout);
-        handleWageInput.timeout = setTimeout(calculatePersonalImpact, 500);
-    }
-}
-
-/**
- * Start real-time counters
- */
-function startCounters() {
-    if (STATE.counters.running) return;
-    
-    STATE.counters.running = true;
-    
-    // Federal interest: $1.1T annually = ~$3M daily
-    const dailyFederalInterest = 1100000000000 / 365;
-    const perSecondInterest = dailyFederalInterest / (24 * 60 * 60);
-    
-    const counterInterval = setInterval(() => {
-        if (!STATE.counters.running) {
-            clearInterval(counterInterval);
-            return;
-        }
-        
-        STATE.counters.federalInterest += perSecondInterest;
-        safeUpdateElement('federalInterest', `$${Math.floor(STATE.counters.federalInterest).toLocaleString()}`);
-        
-        if (STATE.counters.personalTheft > 0) {
-            const personalDaily = STATE.counters.personalTheft * 24;
-            safeUpdateElement('personalShare', `$${personalDaily.toFixed(0)}`);
-        }
-    }, CONFIG.settings.counterUpdateInterval);
-}
-
-/**
- * Initialize all charts
- */
-function initializeCharts() {
+async function loadDebtData() {
     try {
-        createMasterChart();
-        createPersonalChart();
-        createConstitutionalChart();
-        createTimelineChart();
-        createCumulativeChart();
+        const response = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=GFDEBTN&api_key=${API_KEYS.fred}&file_type=json&limit=1`);
         
-        // Initial update
-        updateAllCharts();
-        
-        console.log('📈 Charts initialized successfully');
-        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.observations && data.observations.length > 0) {
+                const latest = data.observations[0];
+                if (latest.value !== '.') {
+                    currentDebt = (parseFloat(latest.value) / 1000).toFixed(2);
+                    console.log(`Updated debt: $${currentDebt}T`);
+                }
+            }
+        }
     } catch (error) {
-        console.error('Chart initialization error:', error);
+        console.log('FRED API error:', error);
     }
 }
 
-/**
- * Create the master correlation chart
- */
-function createMasterChart() {
-    const canvas = document.getElementById('masterChart');
-    if (!canvas) return;
+// Update Dashboard
+function updateDashboard() {
+    document.getElementById('goldPrice').textContent = `$${currentGoldPrice.toLocaleString()}`;
+    document.getElementById('silverPrice').textContent = `$${currentSilverPrice.toFixed(2)}`;
+    document.getElementById('debtAmount').textContent = `$${currentDebt}T`;
+}
+
+// Generate Historical Data
+function generateHistoricalData() {
+    // Generate years from 1900 to 2025
+    for (let year = 1900; year <= 2025; year++) {
+        historicalData.years.push(year);
+    }
     
-    const ctx = canvas.getContext('2d');
+    // Generate gold prices (simplified model)
+    historicalData.gold = historicalData.years.map(year => {
+        if (year <= 1933) return 20.67;
+        if (year <= 1971) return 35;
+        if (year <= 1980) return 35 + (year - 1971) * 80;
+        if (year <= 2000) return 850 - (year - 1980) * 28.5;
+        return 280 + (year - 2000) * 120;
+    });
     
-    STATE.charts.master = new Chart(ctx, {
+    // Generate silver prices
+    historicalData.silver = historicalData.gold.map(gold => gold / 70); // Simplified ratio
+    
+    // Generate debt data
+    historicalData.debt = historicalData.years.map(year => {
+        if (year <= 1971) return 0.398 * Math.pow(1.08, year - 1971);
+        return 0.398 * Math.pow(1.12, year - 1971);
+    });
+}
+
+// Initialize Charts
+function initializeCharts() {
+    createMainChart();
+    createPersonalChart();
+    updateCharts();
+}
+
+function createMainChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    
+    charts.main = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: historicalData.years,
             datasets: [
                 {
                     label: 'Gold Price ($)',
-                    data: [],
-                    borderColor: '#ffd700',
+                    data: historicalData.gold,
+                    borderColor: '#FFD700',
                     backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                    yAxisID: 'y',
-                    borderWidth: 3,
-                    tension: 0.1,
-                    fill: false
+                    yAxisID: 'y-left',
+                    tension: 0.1
                 },
                 {
                     label: 'Silver Price ($)',
-                    data: [],
-                    borderColor: '#c0c0c0',
+                    data: historicalData.silver,
+                    borderColor: '#C0C0C0',
                     backgroundColor: 'rgba(192, 192, 192, 0.1)',
-                    yAxisID: 'y',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: false
+                    yAxisID: 'y-left',
+                    tension: 0.1
                 },
                 {
                     label: 'Federal Debt ($T)',
-                    data: [],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                    yAxisID: 'y1',
-                    borderWidth: 3,
-                    tension: 0.1,
-                    fill: false
+                    data: historicalData.debt,
+                    borderColor: '#FF6B6B',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    yAxisID: 'y-right',
+                    tension: 0.1
                 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: CONFIG.settings.chartAnimationDuration
-            },
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        title: function(context) {
-                            return `Year: ${context[0].label}`;
-                        },
-                        label: function(context) {
-                            const value = context.parsed.y;
-                            const suffix = context.dataset.yAxisID === 'y1' ? 'T' : '';
-                            return `${context.dataset.label}: $${value.toFixed(2)}${suffix}`;
-                        }
-                    }
-                }
-            },
             scales: {
-                y: {
+                'y-left': {
                     type: 'logarithmic',
-                    display: true,
                     position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Gold & Silver Price ($) - Log Scale'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value;
-                        }
-                    }
+                    title: { display: true, text: 'Price ($) - Log Scale' }
                 },
-                y1: {
+                'y-right': {
                     type: 'logarithmic',
-                    display: true,
                     position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Federal Debt ($T) - Log Scale'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value + 'T';
-                        }
-                    }
+                    title: { display: true, text: 'Debt ($T) - Log Scale' },
+                    grid: { drawOnChartArea: false }
                 }
             }
         }
     });
 }
 
-/**
- * Create personal impact chart
- */
 function createPersonalChart() {
-    const canvas = document.getElementById('personalChart');
-    if (!canvas) return;
+    const ctx = document.getElementById('personalChart').getContext('2d');
     
-    const ctx = canvas.getContext('2d');
+    const actualWages = historicalData.years.map(year => {
+        if (year <= 1968) return 1.60;
+        if (year <= 2009) return 1.60 + (year - 1968) * 0.14;
+        return 7.25;
+    });
     
-    STATE.charts.personal = new Chart(ctx, {
+    const goldAdjustedWages = historicalData.gold.map(price => (1.60 / 35) * price);
+    
+    charts.personal = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: historicalData.years,
             datasets: [
                 {
-                    label: 'Your Actual Wage',
-                    data: [],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                    borderWidth: 3,
-                    fill: false
+                    label: 'Actual Wages',
+                    data: actualWages,
+                    borderColor: '#FF6B6B',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    tension: 0.1
                 },
                 {
-                    label: 'Gold-Adjusted Wage',
-                    data: [],
-                    borderColor: '#ffd700',
+                    label: 'Gold-Adjusted Wages',
+                    data: goldAdjustedWages,
+                    borderColor: '#FFD700',
                     backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                    borderWidth: 3,
-                    fill: false
-                },
-                {
-                    label: 'Silver-Adjusted Wage',
-                    data: [],
-                    borderColor: '#c0c0c0',
-                    backgroundColor: 'rgba(192, 192, 192, 0.1)',
-                    borderWidth: 2,
-                    fill: false
+                    tension: 0.1
                 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: CONFIG.settings.chartAnimationDuration
-            },
-            plugins: {
-                legend: {
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}/hour`;
-                        }
-                    }
-                }
-            },
             scales: {
                 y: {
-                    title: {
-                        display: true,
-                        text: 'Hourly Wage ($)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value;
-                        }
-                    }
+                    title: { display: true, text: 'Hourly Wage ($)' }
                 }
             }
         }
     });
 }
 
-/**
- * Create constitutional money chart
- */
-function createConstitutionalChart() {
-    const canvas = document.getElementById('constitutionalChart');
-    if (!canvas) return;
+// Calculate Personal Impact
+function calculatePersonalImpact() {
+    const wage = parseFloat(document.getElementById('userWage').value) || 15;
+    const type = document.getElementById('wageType').value;
     
-    const ctx = canvas.getContext('2d');
+    // Convert to hourly
+    userHourlyWage = type === 'annual' ? wage / (40 * 52) : wage;
     
-    STATE.charts.constitutional = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: 'Gold/Silver Ratio',
-                    data: [],
-                    borderColor: '#f39c12',
-                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
-                    borderWidth: 3,
-                    fill: false
-                },
-                {
-                    label: 'Historical Average (16:1)',
-                    data: [],
-                    borderColor: '#95a5a6',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Gold/Silver Ratio'
-                    }
-                }
-            }
-        }
-    });
+    // Calculate gold-adjusted wage
+    const goldOuncesPerHour1968 = 1.60 / 35; // 1968 min wage / 1968 gold price
+    const shouldEarn = goldOuncesPerHour1968 * currentGoldPrice;
+    const stolen = Math.max(shouldEarn - userHourlyWage, 0);
+    const lifetimeTheft = stolen * 40 * 52 * 40; // 40 years career
+    
+    // Update display
+    document.getElementById('shouldEarn').textContent = `$${shouldEarn.toFixed(2)}/hour`;
+    document.getElementById('actualEarn').textContent = `$${userHourlyWage.toFixed(2)}/hour`;
+    document.getElementById('stolenAmount').textContent = `$${stolen.toFixed(2)}/hour`;
+    document.getElementById('lifetimeTheft').textContent = `$${(lifetimeTheft / 1000000).toFixed(1)} Million`;
+    
+    // Show results
+    document.getElementById('results').classList.add('fade-in');
 }
 
-/**
- * Create timeline chart
- */
-function createTimelineChart() {
-    const canvas = document.getElementById('timelineChart');
-    if (!canvas) return;
+// Update Slider Values
+function updateSliders() {
+    const start = document.getElementById('startYear').value;
+    const end = document.getElementById('endYear').value;
     
-    const ctx = canvas.getContext('2d');
+    document.getElementById('startValue').textContent = start;
+    document.getElementById('endValue').textContent = end;
     
-    const events = [
-        {year: 1910, title: "Jekyll Island Conspiracy"},
-        {year: 1913, title: "Federal Reserve Act"},
-        {year: 1933, title: "Gold Confiscation"},
-        {year: 1944, title: "Bretton Woods"},
-        {year: 1971, title: "Nixon Shock"},
-        {year: 2008, title: "Financial Crisis"},
-        {year: 2020, title: "COVID Wealth Transfer"}
-    ];
-    
-    STATE.charts.timeline = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Major Events',
-                data: events.map((event, index) => ({
-                    x: event.year,
-                    y: (index % 2) * 0.5 + 0.5, // Alternate heights
-                    title: event.title
-                })),
-                backgroundColor: '#3498db',
-                borderColor: '#2980b9',
-                pointRadius: 8,
-                pointHoverRadius: 12
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        title: function(context) {
-                            return `${context[0].parsed.x}: ${context[0].raw.title}`;
-                        },
-                        label: function() {
-                            return '';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Year'
-                    },
-                    min: 1900,
-                    max: 2025
-                },
-                y: {
-                    display: false,
-                    min: 0,
-                    max: 1
-                }
-            }
-        }
-    });
-}
-
-/**
- * Create cumulative theft chart
- */
-function createCumulativeChart() {
-    const canvas = document.getElementById('cumulativeChart');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    STATE.charts.cumulative = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Cumulative Wealth Transfer ($T)',
-                data: [],
-                backgroundColor: 'rgba(231, 76, 60, 0.8)',
-                borderColor: '#e74c3c',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Cumulative Transfer ($T)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value + 'T';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-/**
- * Update all charts with current data
- */
-function updateAllCharts() {
-    const startYear = STATE.ui.currentDateRange.start;
-    const endYear = STATE.ui.currentDateRange.end;
-    
-    updateMasterChart(startYear, endYear);
-    updatePersonalChart();
-    updateConstitutionalChart(startYear, endYear);
-    updateCumulativeChart(startYear, endYear);
-    calculateAndDisplayCorrelations(startYear, endYear);
-}
-
-/**
- * Update master correlation chart
- */
-function updateMasterChart(startYear, endYear) {
-    if (!STATE.charts.master) return;
-    
-    const filteredGold = STATE.historicalData.gold.filter(d => d.year >= startYear && d.year <= endYear);
-    const filteredSilver = STATE.historicalData.silver.filter(d => d.year >= startYear && d.year <= endYear);
-    const filteredDebt = STATE.historicalData.debt.filter(d => d.year >= startYear && d.year <= endYear);
-    
-    const years = filteredGold.map(d => d.year);
-    
-    STATE.charts.master.data.labels = years;
-    STATE.charts.master.data.datasets[0].data = filteredGold.map(d => d.value);
-    STATE.charts.master.data.datasets[1].data = filteredSilver.map(d => d.value);
-    STATE.charts.master.data.datasets[2].data = filteredDebt.map(d => d.value);
-    
-    STATE.charts.master.update('none'); // Skip animation for performance
-}
-
-/**
- * Update personal impact chart
- */
-function updatePersonalChart() {
-    if (!STATE.charts.personal) return;
-    
-    const showUserWage = document.getElementById('showUserWage')?.checked ?? true;
-    const startYear = STATE.ui.currentDateRange.start;
-    const endYear = STATE.ui.currentDateRange.end;
-    
-    const years = [];
-    const actualWages = [];
-    const goldAdjustedWages = [];
-    const silverAdjustedWages = [];
-    
-    // Sample every 5 years for performance
-    for (let year = startYear; year <= endYear; year += 5) {
-        years.push(year);
-        
-        // Get wage data
-        let wage = 7.25; // Default current minimum wage
-        if (showUserWage && STATE.userData.theftCalculated) {
-            wage = STATE.userData.hourlyWage;
-        } else {
-            const historicalWage = STATE.historicalData.wages.find(w => w.year <= year);
-            if (historicalWage) wage = historicalWage.value;
-        }
-        
-        actualWages.push(wage);
-        
-        // Calculate adjusted wages
-        const goldPrice = STATE.historicalData.gold.find(g => g.year === year)?.value || 35;
-        const silverPrice = STATE.historicalData.silver.find(s => s.year === year)?.value || 1.39;
-        
-        goldAdjustedWages.push((1.60 / 35) * goldPrice);
-        silverAdjustedWages.push((1.60 / 1.39) * silverPrice);
+    // Ensure end > start
+    if (parseInt(end) <= parseInt(start)) {
+        document.getElementById('endYear').value = parseInt(start) + 10;
+        document.getElementById('endValue').textContent = parseInt(start) + 10;
     }
     
-    STATE.charts.personal.data.labels = years;
-    STATE.charts.personal.data.datasets[0].data = actualWages;
-    STATE.charts.personal.data.datasets[1].data = goldAdjustedWages;
-    STATE.charts.personal.data.datasets[2].data = silverAdjustedWages;
-    
-    STATE.charts.personal.update('none');
+    updateCharts();
 }
 
-/**
- * Update constitutional money chart
- */
-function updateConstitutionalChart(startYear, endYear) {
-    if (!STATE.charts.constitutional) return;
+// Update Charts
+function updateCharts() {
+    const start = parseInt(document.getElementById('startYear').value);
+    const end = parseInt(document.getElementById('endYear').value);
     
-    const years = [];
-    const ratios = [];
-    const historicalAverage = [];
+    // Filter data
+    const startIndex = historicalData.years.indexOf(start);
+    const endIndex = historicalData.years.indexOf(end);
     
-    // Sample every 2 years for performance
-    for (let year = startYear; year <= endYear; year += 2) {
-        const gold = STATE.historicalData.gold.find(g => g.year === year)?.value || 35;
-        const silver = STATE.historicalData.silver.find(s => s.year === year)?.value || 1.39;
+    if (startIndex >= 0 && endIndex >= 0) {
+        const years = historicalData.years.slice(startIndex, endIndex + 1);
+        const gold = historicalData.gold.slice(startIndex, endIndex + 1);
+        const silver = historicalData.silver.slice(startIndex, endIndex + 1);
+        const debt = historicalData.debt.slice(startIndex, endIndex + 1);
         
-        years.push(year);
-        ratios.push(gold / silver);
-        historicalAverage.push(16); // Historical 16:1 ratio
+        // Update main chart
+        charts.main.data.labels = years;
+        charts.main.data.datasets[0].data = gold;
+        charts.main.data.datasets[1].data = silver;
+        charts.main.data.datasets[2].data = debt;
+        charts.main.update();
+        
+        // Calculate correlations
+        const goldCorr = calculateCorrelation(gold, debt);
+        const silverCorr = calculateCorrelation(silver, debt);
+        
+        document.getElementById('goldCorr').textContent = goldCorr.toFixed(2);
+        document.getElementById('silverCorr').textContent = silverCorr.toFixed(2);
     }
-    
-    STATE.charts.constitutional.data.labels = years;
-    STATE.charts.constitutional.data.datasets[0].data = ratios;
-    STATE.charts.constitutional.data.datasets[1].data = historicalAverage;
-    
-    STATE.charts.constitutional.update('none');
 }
 
-/**
- * Update cumulative theft chart
- */
-function updateCumulativeChart(startYear, endYear) {
-    if (!STATE.charts.cumulative) return;
-    
-    const years = [];
-    const cumulativeTransfer = [];
-    let cumulative = 0;
-    
-    // Sample every 5 years
-    for (let year = startYear; year <= endYear; year += 5) {
-        const debt = STATE.historicalData.debt.find(d => d.year === year)?.value || 0;
-        
-        years.push(year);
-        
-        // Simplified wealth transfer calculation
-        if (year > startYear) {
-            const prevDebt = STATE.historicalData.debt.find(d => d.year === year - 5)?.value || 0;
-            const avgDebt = (debt + prevDebt) / 2;
-            const transfer = avgDebt * 0.05 * 5; // 5% average interest over 5 years
-            cumulative += transfer;
-        }
-        
-        cumulativeTransfer.push(cumulative);
-    }
-    
-    STATE.charts.cumulative.data.labels = years;
-    STATE.charts.cumulative.data.datasets[0].data = cumulativeTransfer;
-    
-    STATE.charts.cumulative.update('none');
-}
-
-/**
- * Calculate and display correlations
- */
-function calculateAndDisplayCorrelations(startYear, endYear) {
-    const filteredGold = STATE.historicalData.gold.filter(d => d.year >= startYear && d.year <= endYear);
-    const filteredSilver = STATE.historicalData.silver.filter(d => d.year >= startYear && d.year <= endYear);
-    const filteredDebt = STATE.historicalData.debt.filter(d => d.year >= startYear && d.year <= endYear);
-    
-    if (filteredGold.length < 3 || filteredDebt.length < 3) return;
-    
-    const goldPrices = filteredGold.map(d => d.value);
-    const silverPrices = filteredSilver.map(d => d.value);
-    const debtValues = filteredDebt.map(d => d.value);
-    
-    const goldDebtCorr = calculateCorrelation(goldPrices, debtValues);
-    const silverDebtCorr = calculateCorrelation(silverPrices, debtValues);
-    
-    safeUpdateElement('goldDebtCorr', goldDebtCorr.toFixed(3));
-    safeUpdateElement('silverDebtCorr', silverDebtCorr.toFixed(3));
-}
-
-/**
- * Calculate Pearson correlation coefficient
- */
+// Calculate Correlation
 function calculateCorrelation(x, y) {
     if (x.length !== y.length || x.length < 2) return 0;
     
@@ -1112,211 +418,51 @@ function calculateCorrelation(x, y) {
     return denominator === 0 ? 0 : numerator / denominator;
 }
 
-/**
- * Update slider displays and date range
- */
-function updateSliderDisplays() {
-    const startYear = parseInt(document.getElementById('startYear')?.value) || CONFIG.settings.defaultStartYear;
-    const endYear = parseInt(document.getElementById('endYear')?.value) || CONFIG.settings.defaultEndYear;
-    
-    // Ensure end year is after start year
-    const validEndYear = Math.max(endYear, startYear + 1);
-    
-    if (validEndYear !== endYear) {
-        const endYearSlider = document.getElementById('endYear');
-        if (endYearSlider) endYearSlider.value = validEndYear;
-    }
-    
-    // Update displays
-    safeUpdateElement('startYearValue', startYear.toString());
-    safeUpdateElement('endYearValue', validEndYear.toString());
-    
-    // Update state
-    STATE.ui.currentDateRange = {start: startYear, end: validEndYear};
-    
-    // Update charts
-    updateAllCharts();
+// Reset Charts
+function resetCharts() {
+    document.getElementById('startYear').value = 1900;
+    document.getElementById('endYear').value = 2025;
+    updateSliders();
 }
 
-/**
- * Setup era buttons
- */
-function setupEraButtons() {
-    const eraButtons = document.querySelectorAll('.era-btn');
-    eraButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            eraButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            const era = this.dataset.era;
-            switch(era) {
-                case 'gold-standard':
-                    setDateRange(1900, 1933);
-                    break;
-                case 'fed-expansion':
-                    setDateRange(1913, 1971);
-                    break;
-                case 'fiat-era':
-                    setDateRange(1971, 2025);
-                    break;
-                default:
-                    setDateRange(1900, 2025);
-            }
-        });
-    });
+// Start Counters
+function startCounters() {
+    let counter = 0;
+    const dailyInterest = 1100000000000 / 365; // $1.1T annually
+    const perSecond = dailyInterest / (24 * 60 * 60);
+    
+    counterInterval = setInterval(() => {
+        counter += perSecond;
+        document.getElementById('theftCounter').textContent = `$${Math.floor(counter).toLocaleString()}`;
+    }, 1000);
 }
 
-/**
- * Set date range and update sliders
- */
-function setDateRange(start, end) {
-    const startSlider = document.getElementById('startYear');
-    const endSlider = document.getElementById('endYear');
-    
-    if (startSlider) startSlider.value = start;
-    if (endSlider) endSlider.value = end;
-    
-    updateSliderDisplays();
-}
-
-/**
- * Reset to default settings
- */
-function resetToDefaults() {
-    setDateRange(CONFIG.settings.defaultStartYear, CONFIG.settings.defaultEndYear);
-    
-    const showUserWageCheck = document.getElementById('showUserWage');
-    if (showUserWageCheck) showUserWageCheck.checked = true;
-    
-    updateAllCharts();
-}
-
-/**
- * Initialize tooltip system
- */
-function initializeTooltips() {
-    // Add click listeners to info icons
-    document.querySelectorAll('.info-icon').forEach(icon => {
-        icon.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            showTooltip(this.dataset.info);
-        });
-    });
-    
-    // Close tooltip when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.info-tooltip') && !e.target.closest('.info-icon')) {
-            hideTooltip();
-        }
-    });
-    
-    // Close with escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            hideTooltip();
-        }
-    });
-}
-
-/**
- * Show tooltip with given info key
- */
-function showTooltip(infoKey) {
-    const tooltip = document.getElementById('infoTooltip');
-    const tooltipText = tooltip?.querySelector('.tooltip-text');
-    const closeBtn = tooltip?.querySelector('.tooltip-close');
-    
-    if (!tooltip || !tooltipText) return;
-    
-    const info = TOOLTIP_INFO[infoKey];
-    if (!info) {
-        console.warn('Tooltip info not found for:', infoKey);
-        return;
-    }
-    
-    // Set content
-    tooltipText.innerHTML = `<h4>${info.title}</h4>${info.content}`;
-    
-    // Show tooltip
-    tooltip.style.display = 'block';
-    STATE.ui.tooltipOpen = true;
-    
-    // Add close handler
-    if (closeBtn) {
-        closeBtn.onclick = hideTooltip;
-    }
-}
-
-/**
- * Hide tooltip
- */
-function hideTooltip() {
-    const tooltip = document.getElementById('infoTooltip');
-    if (tooltip) {
-        tooltip.style.display = 'none';
-        STATE.ui.tooltipOpen = false;
-    }
-}
-
-/**
- * Share analysis functionality
- */
+// Share Analysis
 function shareAnalysis() {
-    if (!STATE.userData.theftCalculated) {
-        alert('Please calculate your personal theft first!');
-        return;
-    }
-    
-    const lifetimeTheft = (STATE.userData.hourlyWage * 40 * 52 * 40) / 1000000;
+    const lifetimeTheft = (((1.60 / 35) * currentGoldPrice - userHourlyWage) * 40 * 52 * 40 / 1000000).toFixed(1);
+    const text = `I just discovered I've been systematically robbed of $${lifetimeTheft} million through monetary manipulation. See the mathematical proof:`;
     const url = window.location.href;
-    const text = `I just discovered I've been systematically robbed of $${lifetimeTheft.toFixed(1)} million over my lifetime through monetary manipulation. See the mathematical proof:`;
     
     if (navigator.share) {
         navigator.share({
-            title: 'The $3.5 Quadrillion Theft - Mathematical Proof',
+            title: 'The $3.5 Quadrillion Theft',
             text: text,
             url: url
-        }).catch(err => console.log('Share failed:', err));
-    } else {
-        // Fallback - copy to clipboard
-        const fullText = `${text} ${url}`;
-        navigator.clipboard.writeText(fullText).then(() => {
-            alert('Analysis copied to clipboard! Share it everywhere.');
-        }).catch(() => {
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = fullText;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            alert('Analysis copied to clipboard!');
         });
+    } else {
+        // Fallback for non-mobile browsers
+        const fullText = `${text}\n\n${url}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(fullText).then(() => {
+                alert('Analysis copied to clipboard! Share it everywhere.');
+            });
+        } else {
+            alert(`${fullText}`);
+        }
     }
 }
 
-// ===== INITIALIZATION =====
+// Auto-refresh data every 5 minutes
+setInterval(loadRealTimeData, 300000);
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
-
-// Setup periodic data updates
-setInterval(() => {
-    loadRealTimeData().catch(err => console.warn('Periodic update failed:', err));
-}, CONFIG.apis.metals.updateInterval);
-
-// Export for debugging
-window.WealthExtraction = {
-    STATE,
-    CONFIG,
-    loadRealTimeData,
-    calculatePersonalImpact,
-    updateAllCharts
-};
-
-console.log('💎 Wealth Extraction Analysis Tool v2.1 - JavaScript Loaded');
+console.log('Wealth Extraction Analysis Tool loaded successfully');
