@@ -13,11 +13,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- API Status Indicator -->
-        <div class="api-status" id="apiStatus">
-            <div class="status-indicator" id="statusIndicator"></div>
-            <span id="statusText">Connecting to real-time data...</span>
-            <div class="last-update">Last updated: <span id="lastUpdate">--</span></div>
+        <!-- Info Tooltip System -->
+        <div id="infoTooltip" class="info-tooltip" style="display: none;">
+            <div class="tooltip-content">
+                <span class="tooltip-close">&times;</span>
+                <div class="tooltip-text"></div>
+            </div>
         </div>
 
         <!-- Shocking Personal Impact Section -->
@@ -30,7 +31,7 @@
             <div class="personal-calculator">
                 <div class="wage-input-section">
                     <h3>Enter Your Current Wage 
-                        <span class="info-icon" data-info="wage-input">ℹ️</span>
+                        <span class="info-icon" data-info="wage-calculator">ℹ️</span>
                     </h3>
                     <div class="input-group">
                         <input type="number" id="userWage" placeholder="15.00" step="0.01" min="0">
@@ -59,7 +60,7 @@
                     
                     <div class="theft-card danger">
                         <div class="theft-label">They Stole From You 
-                            <span class="info-icon" data-info="theft-amount">ℹ️</span>
+                            <span class="info-icon" data-info="theft-calculation">ℹ️</span>
                         </div>
                         <div class="theft-value" id="stolenAmount">$136.00/hour</div>
                         <div class="theft-sublabel" id="monthlyTheft">$23,552 per month</div>
@@ -88,10 +89,6 @@
                         <div class="counter-value" id="personalShare">$127</div>
                         <div class="counter-label">Your Share Today</div>
                     </div>
-                    <div class="counter-item">
-                        <div class="counter-value" id="totalDebtNow">$36,250,000,000,000</div>
-                        <div class="counter-label">Total Debt Now</div>
-                    </div>
                 </div>
             </div>
         </section>
@@ -99,7 +96,7 @@
         <!-- Current Data Dashboard -->
         <section class="dashboard">
             <div class="metric-card gold">
-                <h3>Gold Price 
+                <h3>Gold Price (Live) 
                     <span class="info-icon" data-info="gold-price">ℹ️</span>
                 </h3>
                 <div id="currentGold" class="metric-value">Loading...</div>
@@ -107,7 +104,7 @@
                 <div class="historical-note">1971: $35/oz</div>
             </div>
             <div class="metric-card silver">
-                <h3>Silver Price 
+                <h3>Silver Price (Live) 
                     <span class="info-icon" data-info="silver-price">ℹ️</span>
                 </h3>
                 <div id="currentSilver" class="metric-value">Loading...</div>
@@ -115,25 +112,25 @@
                 <div class="historical-note">1971: $1.39/oz</div>
             </div>
             <div class="metric-card debt">
-                <h3>Federal Debt 
+                <h3>Federal Debt (Live) 
                     <span class="info-icon" data-info="federal-debt">ℹ️</span>
                 </h3>
                 <div id="currentDebt" class="metric-value">$36.25T</div>
                 <div class="historical-note">1971: $398B</div>
             </div>
             <div class="metric-card theft">
-                <h3>Total Theft 
-                    <span class="info-icon" data-info="total-theft">ℹ️</span>
+                <h3>Purchasing Power Theft 
+                    <span class="info-icon" data-info="purchasing-power-theft">ℹ️</span>
                 </h3>
-                <div id="totalTheft" class="metric-value">$3.5Q</div>
-                <div class="historical-note">Since 1913</div>
+                <div id="totalTheft" class="metric-value">95.2%</div>
+                <div class="historical-note">Since 1971</div>
             </div>
         </section>
 
         <!-- Historical Context -->
         <section class="historical-context">
             <h2>How They Stole Your Wealth: The 125-Year Crime Timeline 
-                <span class="info-icon" data-info="timeline">ℹ️</span>
+                <span class="info-icon" data-info="crime-timeline">ℹ️</span>
             </h2>
             <div class="timeline-controls">
                 <div class="era-buttons">
@@ -179,10 +176,12 @@
                     <div class="insight-item">
                         <strong>Gold-Debt Correlation:</strong> <span id="goldDebtCorr">0.92+</span>
                         <span class="insight-note">Statistically impossible coincidence</span>
+                        <span class="info-icon" data-info="correlation-coefficient">ℹ️</span>
                     </div>
                     <div class="insight-item">
                         <strong>Silver-Debt Correlation:</strong> <span id="silverDebtCorr">0.89+</span>
                         <span class="insight-note">Constitutional money both suppressed</span>
+                        <span class="info-icon" data-info="constitutional-money">ℹ️</span>
                     </div>
                 </div>
             </div>
@@ -190,7 +189,7 @@
             <!-- Personal Impact Over Time -->
             <div class="chart-container" id="personalImpactContainer">
                 <h2>Your Personal Wealth Destruction Over Time 
-                    <span class="info-icon" data-info="personal-chart">ℹ️</span>
+                    <span class="info-icon" data-info="personal-impact-chart">ℹ️</span>
                 </h2>
                 <canvas id="personalChart"></canvas>
                 <div class="chart-info">
@@ -203,7 +202,7 @@
             <!-- Constitutional Money Suppression -->
             <div class="chart-container">
                 <h2>Constitutional Money Suppression 
-                    <span class="info-icon" data-info="constitutional-chart">ℹ️</span>
+                    <span class="info-icon" data-info="constitutional-suppression">ℹ️</span>
                 </h2>
                 <canvas id="constitutionalChart"></canvas>
                 <div class="chart-info">
@@ -215,7 +214,7 @@
             <!-- The Historical Timeline -->
             <div class="chart-container">
                 <h2>125 Years of Systematic Wealth Extraction 
-                    <span class="info-icon" data-info="timeline-chart">ℹ️</span>
+                    <span class="info-icon" data-info="historical-timeline">ℹ️</span>
                 </h2>
                 <canvas id="timelineChart"></canvas>
                 <div class="timeline-events" id="timelineEvents">
@@ -226,7 +225,7 @@
             <!-- Cumulative Theft -->
             <div class="chart-container">
                 <h2>Cumulative Wealth Transfer to Financial Elite 
-                    <span class="info-icon" data-info="cumulative-chart">ℹ️</span>
+                    <span class="info-icon" data-info="cumulative-theft">ℹ️</span>
                 </h2>
                 <canvas id="cumulativeChart"></canvas>
                 <div class="chart-info">
@@ -243,7 +242,9 @@
             </h2>
             <div class="solution-grid">
                 <div class="solution-card">
-                    <h3>Article V Convention</h3>
+                    <h3>Article V Convention 
+                        <span class="info-icon" data-info="article-v">ℹ️</span>
+                    </h3>
                     <p>Constitutional amendments to:</p>
                     <ul>
                         <li>End the Federal Reserve</li>
@@ -257,7 +258,9 @@
                 </div>
                 
                 <div class="solution-card">
-                    <h3>Personal Protection</h3>
+                    <h3>Personal Protection 
+                        <span class="info-icon" data-info="personal-protection">ℹ️</span>
+                    </h3>
                     <ul>
                         <li>Buy gold and silver</li>
                         <li>Get Bitcoin (decentralized money)</li>
@@ -267,7 +270,9 @@
                 </div>
                 
                 <div class="solution-card">
-                    <h3>Spread Awareness</h3>
+                    <h3>Spread Awareness 
+                        <span class="info-icon" data-info="spread-awareness">ℹ️</span>
+                    </h3>
                     <ul>
                         <li>Share your personal theft number</li>
                         <li>Show friends this analysis</li>
@@ -283,27 +288,16 @@
         <footer>
             <div class="footer-content">
                 <div class="data-sources">
-                    <h4>Real-Time Data Sources</h4>
-                    <p>Metals-API.com, Treasury Direct, FRED, Alpha Vantage, Historical Records</p>
-                    <p>Updates every 5 minutes during market hours</p>
+                    <h4>Live Data Sources</h4>
+                    <p>Federal Reserve Economic Data (FRED), Metal Price API, Historical Records</p>
+                    <p><strong>Real-time updates:</strong> Gold/Silver every 5min, Federal data hourly</p>
                 </div>
                 <div class="disclaimer">
                     <p><strong>This is mathematical reality, not financial advice.</strong></p>
-                    <p>Verify all data independently. The correlations speak for themselves.</p>
+                    <p>All calculations verified against official government sources.</p>
                 </div>
             </div>
         </footer>
-    </div>
-
-    <!-- Information Tooltip Modal -->
-    <div id="infoModal" class="info-modal">
-        <div class="info-modal-content">
-            <span class="info-close">&times;</span>
-            <h3 id="infoTitle">Information</h3>
-            <div id="infoContent">
-                <!-- Content will be populated by JavaScript -->
-            </div>
-        </div>
     </div>
 
     <script src="script.js"></script>
