@@ -723,6 +723,7 @@ input[type="range"]::-moz-range-thumb {
 
 .chart-wrapper {
     position: relative;
+    height: 400px;
     margin: 2rem 0;
 }
 
