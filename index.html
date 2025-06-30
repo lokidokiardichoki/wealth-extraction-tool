@@ -3,69 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The $3.5 Quadrillion Theft - Mathematical Proof of Systematic Wealth Extraction</title>
-    <meta name="description" content="Interactive analysis showing how $2-3.5 quadrillion has been systematically stolen from Americans through monetary manipulation. Calculate your personal theft amount.">
-    <meta name="keywords" content="wealth extraction, Federal Reserve, gold standard, inflation theft, monetary policy">
-    
-    <!-- Stylesheets -->
+    <title>The $3.5 Quadrillion Theft - Your Personal Impact</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <h2>Loading Real-Time Data...</h2>
-            <p>Fetching live gold, silver, and federal debt data</p>
-        </div>
-    </div>
-
-    <!-- Main Container -->
     <div class="container">
-        
-        <!-- Info Tooltip System -->
-        <div id="infoTooltip" class="info-tooltip" style="display: none;">
-            <div class="tooltip-overlay"></div>
-            <div class="tooltip-content">
-                <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
-                <div class="tooltip-text"></div>
-            </div>
-        </div>
-
-        <!-- Hero Section - Personal Impact -->
+        <!-- Shocking Personal Impact Section -->
         <section class="hero-impact">
             <div class="impact-header">
                 <h1>You've Been Systematically Robbed</h1>
                 <p class="subtitle">Mathematical proof of the largest theft in human history</p>
             </div>
             
-            <!-- Personal Theft Calculator -->
             <div class="personal-calculator">
                 <div class="wage-input-section">
-                    <h3>
-                        Enter Your Current Wage 
-                        <span class="info-icon" data-info="wage-calculator" aria-label="How this calculator works">ℹ️</span>
-                    </h3>
+                    <h3>Enter Your Current Wage</h3>
                     <div class="input-group">
-                        <input 
-                            type="number" 
-                            id="userWage" 
-                            placeholder="15.00" 
-                            step="0.01" 
-                            min="0" 
-                            max="1000"
-                            aria-label="Enter your wage amount"
-                        >
-                        <select id="wageType" aria-label="Select wage type">
+                        <input type="number" id="userWage" placeholder="15.00" step="0.01" min="0">
+                        <select id="wageType">
                             <option value="hourly">per hour</option>
                             <option value="annual">per year</option>
                         </select>
@@ -73,13 +33,9 @@
                     <button id="calculateImpact" class="btn-shock">Calculate My Theft</button>
                 </div>
                 
-                <!-- Theft Results Display -->
-                <div class="theft-results" id="theftResults" style="display: none;" role="region" aria-live="polite">
+                <div class="theft-results" id="theftResults" style="display: none;">
                     <div class="theft-card primary">
-                        <div class="theft-label">
-                            You Should Be Earning 
-                            <span class="info-icon" data-info="should-earn" aria-label="Why you should earn this amount">ℹ️</span>
-                        </div>
+                        <div class="theft-label">You Should Be Earning</div>
                         <div class="theft-value" id="shouldEarn">$151.00/hour</div>
                         <div class="theft-sublabel">Based on 1968 gold purchasing power</div>
                     </div>
@@ -91,294 +47,189 @@
                     </div>
                     
                     <div class="theft-card danger">
-                        <div class="theft-label">
-                            They Stole From You 
-                            <span class="info-icon" data-info="theft-calculation" aria-label="How theft is calculated">ℹ️</span>
-                        </div>
+                        <div class="theft-label">They Stole From You</div>
                         <div class="theft-value" id="stolenAmount">$136.00/hour</div>
                         <div class="theft-sublabel" id="monthlyTheft">$23,552 per month</div>
                     </div>
                     
                     <div class="lifetime-theft">
-                        <h4>
-                            Your Lifetime Theft: <span id="lifetimeTheft">$2.8 Million</span>
-                            <span class="info-icon" data-info="lifetime-theft" aria-label="Lifetime theft explanation">ℹ️</span>
-                        </h4>
+                        <h4>Your Lifetime Theft: <span id="lifetimeTheft">$2.8 Million</span></h4>
                         <p>This is what the monetary system has stolen from you personally</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Real-Time Theft Counter -->
+            <!-- Real-time theft counter -->
             <div class="theft-counter">
-                <h3>
-                    Wealth Being Stolen Right Now 
-                    <span class="info-icon" data-info="real-time-theft" aria-label="Real-time theft explanation">ℹ️</span>
-                </h3>
+                <h3>Wealth Being Stolen Right Now</h3>
                 <div class="counter-grid">
                     <div class="counter-item">
-                        <div class="counter-value" id="federalInterest" aria-live="polite">$0</div>
-                        <div class="counter-label">Federal Interest Today</div>
+                        <div class="counter-value" id="federalInterest">$3,287,671</div>
+                        <div class="counter-label">Fed Interest Today</div>
                     </div>
                     <div class="counter-item">
-                        <div class="counter-value" id="personalShare" aria-live="polite">$0</div>
+                        <div class="counter-value" id="personalShare">$127</div>
                         <div class="counter-label">Your Share Today</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Live Data Dashboard -->
-        <section class="dashboard" role="region" aria-label="Live market data">
+        <!-- Current Data Dashboard -->
+        <section class="dashboard">
             <div class="metric-card gold">
-                <h3>
-                    Gold Price (Live) 
-                    <span class="info-icon" data-info="gold-price" aria-label="Why gold price matters">ℹ️</span>
-                </h3>
-                <div id="currentGold" class="metric-value" aria-live="polite">Loading...</div>
+                <h3>Gold Price</h3>
+                <div id="currentGold" class="metric-value">Loading...</div>
                 <div class="metric-change" id="goldChange"></div>
                 <div class="historical-note">1971: $35/oz</div>
-                <div class="update-indicator" id="goldUpdate"></div>
             </div>
-            
             <div class="metric-card silver">
-                <h3>
-                    Silver Price (Live) 
-                    <span class="info-icon" data-info="silver-price" aria-label="Silver as constitutional money">ℹ️</span>
-                </h3>
-                <div id="currentSilver" class="metric-value" aria-live="polite">Loading...</div>
+                <h3>Silver Price</h3>
+                <div id="currentSilver" class="metric-value">Loading...</div>
                 <div class="metric-change" id="silverChange"></div>
                 <div class="historical-note">1971: $1.39/oz</div>
-                <div class="update-indicator" id="silverUpdate"></div>
             </div>
-            
             <div class="metric-card debt">
-                <h3>
-                    Federal Debt (Live) 
-                    <span class="info-icon" data-info="federal-debt" aria-label="Federal debt explanation">ℹ️</span>
-                </h3>
-                <div id="currentDebt" class="metric-value" aria-live="polite">$36.25T</div>
+                <h3>Federal Debt</h3>
+                <div id="currentDebt" class="metric-value">$36.25T</div>
                 <div class="historical-note">1971: $398B</div>
-                <div class="update-indicator" id="debtUpdate"></div>
             </div>
-            
             <div class="metric-card theft">
-                <h3>
-                    Purchasing Power Theft 
-                    <span class="info-icon" data-info="purchasing-power-theft" aria-label="Purchasing power theft explanation">ℹ️</span>
-                </h3>
-                <div id="totalTheft" class="metric-value">95.2%</div>
-                <div class="historical-note">Since 1971</div>
+                <h3>Total Theft</h3>
+                <div id="totalTheft" class="metric-value">$3.5Q</div>
+                <div class="historical-note">Since 1913</div>
             </div>
         </section>
 
-        <!-- Historical Context Navigation -->
+        <!-- Historical Context -->
         <section class="historical-context">
-            <h2>
-                How They Stole Your Wealth: The 125-Year Crime Timeline 
-                <span class="info-icon" data-info="crime-timeline" aria-label="Historical timeline explanation">ℹ️</span>
-            </h2>
+            <h2>How They Stole Your Wealth: The 125-Year Crime Timeline</h2>
             <div class="timeline-controls">
-                <div class="era-buttons" role="tablist">
-                    <button class="era-btn active" data-era="all" role="tab" aria-selected="true">Full Timeline</button>
-                    <button class="era-btn" data-era="gold-standard" role="tab">Gold Standard Era</button>
-                    <button class="era-btn" data-era="fed-expansion" role="tab">Fed Expansion</button>
-                    <button class="era-btn" data-era="fiat-era" role="tab">Pure Fiat Era</button>
+                <div class="era-buttons">
+                    <button class="era-btn active" data-era="all">Full Timeline</button>
+                    <button class="era-btn" data-era="gold-standard">Gold Standard Era</button>
+                    <button class="era-btn" data-era="fed-expansion">Fed Expansion</button>
+                    <button class="era-btn" data-era="fiat-era">Pure Fiat Era</button>
                 </div>
             </div>
         </section>
 
         <!-- Chart Controls -->
-        <section class="controls" role="region" aria-label="Chart controls">
+        <section class="controls">
             <div class="control-group">
                 <label for="startYear">Timeline Range:</label>
-                <input 
-                    type="range" 
-                    id="startYear" 
-                    min="1900" 
-                    max="2024" 
-                    value="1900"
-                    aria-label="Start year for analysis"
-                >
-                <span id="startYearValue" class="year-display">1900</span>
-                <span class="range-separator" aria-hidden="true">to</span>
-                <input 
-                    type="range" 
-                    id="endYear" 
-                    min="1901" 
-                    max="2025" 
-                    value="2025"
-                    aria-label="End year for analysis"
-                >
-                <span id="endYearValue" class="year-display">2025</span>
+                <input type="range" id="startYear" min="1900" max="2024" value="1900">
+                <span id="startYearValue">1900</span>
+                <span class="range-separator">to</span>
+                <input type="range" id="endYear" min="1901" max="2025" value="2025">
+                <span id="endYearValue">2025</span>
             </div>
             <div class="control-group">
-                <label class="checkbox-label">
+                <label>
                     <input type="checkbox" id="showUserWage" checked>
-                    <span class="checkmark"></span>
                     Show My Personal Impact
                 </label>
                 <button id="resetToDefaults" class="btn-secondary">Reset View</button>
             </div>
         </section>
 
-        <!-- Main Chart Visualizations -->
-        <section class="charts" role="region" aria-label="Data visualizations">
-            
-            <!-- Primary Correlation Chart -->
+        <!-- Main Visualizations -->
+        <section class="charts">
+            <!-- The Crime Chart -->
             <div class="chart-container featured">
-                <h2>
-                    The Mathematical Proof: Gold, Silver & Debt Correlation 
-                    <span class="info-icon" data-info="correlation-chart" aria-label="Correlation chart explanation">ℹ️</span>
-                </h2>
+                <h2>The Mathematical Proof: Gold, Silver & Debt Correlation</h2>
                 <div class="chart-description">
-                    <p>This chart proves systematic coordination. Natural market forces cannot create this level of correlation over 125 years.</p>
+                    <p>This chart proves systematic coordination. Natural market forces cannot create this level of correlation.</p>
                 </div>
-                <div class="chart-wrapper">
-                    <canvas id="masterChart" aria-label="Gold, silver, and debt correlation chart"></canvas>
-                </div>
+                <canvas id="masterChart"></canvas>
                 <div class="chart-insights">
                     <div class="insight-item">
-                        <strong>Gold-Debt Correlation:</strong> 
-                        <span id="goldDebtCorr" class="correlation-value">0.92+</span>
+                        <strong>Gold-Debt Correlation:</strong> <span id="goldDebtCorr">0.92+</span>
                         <span class="insight-note">Statistically impossible coincidence</span>
-                        <span class="info-icon" data-info="correlation-coefficient" aria-label="Correlation coefficient explanation">ℹ️</span>
                     </div>
                     <div class="insight-item">
-                        <strong>Silver-Debt Correlation:</strong> 
-                        <span id="silverDebtCorr" class="correlation-value">0.89+</span>
+                        <strong>Silver-Debt Correlation:</strong> <span id="silverDebtCorr">0.89+</span>
                         <span class="insight-note">Constitutional money both suppressed</span>
-                        <span class="info-icon" data-info="constitutional-money" aria-label="Constitutional money explanation">ℹ️</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Personal Impact Chart -->
+            <!-- Personal Impact Over Time -->
             <div class="chart-container" id="personalImpactContainer">
-                <h2>
-                    Your Personal Wealth Destruction Over Time 
-                    <span class="info-icon" data-info="personal-impact-chart" aria-label="Personal impact chart explanation">ℹ️</span>
-                </h2>
-                <div class="chart-wrapper">
-                    <canvas id="personalChart" aria-label="Personal wage comparison over time"></canvas>
-                </div>
+                <h2>Your Personal Wealth Destruction Over Time</h2>
+                <canvas id="personalChart"></canvas>
                 <div class="chart-info">
-                    <div class="legend-item">
-                        <span class="legend-color red"></span>
-                        <span>What you actually earn</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color gold"></span>
-                        <span>What you should earn (gold-adjusted)</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color silver"></span>
-                        <span>What you should earn (silver-adjusted)</span>
-                    </div>
+                    <p><strong>Red Line:</strong> What you actually earn</p>
+                    <p><strong>Gold Line:</strong> What you should earn (gold-adjusted)</p>
+                    <p><strong>Silver Line:</strong> What you should earn (silver-adjusted)</p>
                 </div>
             </div>
 
-            <!-- Constitutional Money Chart -->
-            <div class="chart-container" id="constitutionalContainer">
-                <h2>
-                    Constitutional Money Suppression 
-                    <span class="info-icon" data-info="constitutional-suppression" aria-label="Constitutional money suppression explanation">ℹ️</span>
-                </h2>
-                <div class="constitutional-quote">
-                    <blockquote>
-                        <strong>Article 1, Section 10:</strong> "No State shall make any Thing but gold and silver Coin a Tender in Payment of Debts"
-                    </blockquote>
+            <!-- Constitutional Money Suppression -->
+            <div class="chart-container">
+                <h2>Constitutional Money Suppression</h2>
+                <canvas id="constitutionalChart"></canvas>
+                <div class="chart-info">
+                    <p><strong>Article 1, Section 10:</strong> "No State shall make any Thing but gold and silver Coin a Tender in Payment of Debts"</p>
                     <p><strong>The Crime:</strong> They replaced constitutional money with debt-based currency</p>
                 </div>
-                <div class="chart-wrapper">
-                    <canvas id="constitutionalChart" aria-label="Gold to silver ratio over time"></canvas>
+            </div>
+
+            <!-- The Historical Timeline -->
+            <div class="chart-container">
+                <h2>125 Years of Systematic Wealth Extraction</h2>
+                <canvas id="timelineChart"></canvas>
+                <div class="timeline-events" id="timelineEvents">
+                    <!-- Events will be populated by JavaScript -->
                 </div>
             </div>
 
-            <!-- Historical Timeline Chart -->
+            <!-- Cumulative Theft -->
             <div class="chart-container">
-                <h2>
-                    125 Years of Systematic Wealth Extraction 
-                    <span class="info-icon" data-info="historical-timeline" aria-label="Historical timeline explanation">ℹ️</span>
-                </h2>
-                <div class="chart-wrapper">
-                    <canvas id="timelineChart" aria-label="Historical events timeline"></canvas>
-                </div>
-                <div class="timeline-events" id="timelineEvents" role="region" aria-label="Historical events">
-                    <!-- Events populated by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Cumulative Theft Chart -->
-            <div class="chart-container">
-                <h2>
-                    Cumulative Wealth Transfer to Financial Elite 
-                    <span class="info-icon" data-info="cumulative-theft" aria-label="Cumulative theft explanation">ℹ️</span>
-                </h2>
-                <div class="chart-wrapper">
-                    <canvas id="cumulativeChart" aria-label="Cumulative wealth transfer over time"></canvas>
-                </div>
+                <h2>Cumulative Wealth Transfer to Financial Elite</h2>
+                <canvas id="cumulativeChart"></canvas>
                 <div class="chart-info">
-                    <p><strong>Conservative estimate:</strong> $2-3.5 Quadrillion stolen since 1913</p>
-                    <p><strong>Per American:</strong> $6-10 Million in lifetime theft</p>
+                    <p>Conservative estimate: <strong>$2-3.5 Quadrillion</strong> stolen since 1913</p>
+                    <p>Per American: <strong>$6-10 Million</strong> in lifetime theft</p>
                 </div>
             </div>
         </section>
 
         <!-- Solutions Section -->
         <section class="solutions">
-            <h2>
-                How to Fight Back: Constitutional Solutions 
-                <span class="info-icon" data-info="solutions" aria-label="Solutions explanation">ℹ️</span>
-            </h2>
+            <h2>How to Fight Back: Constitutional Solutions</h2>
             <div class="solution-grid">
                 <div class="solution-card">
-                    <h3>
-                        Article V Convention 
-                        <span class="info-icon" data-info="article-v" aria-label="Article V explanation">ℹ️</span>
-                    </h3>
+                    <h3>Article V Convention</h3>
                     <p>Constitutional amendments to:</p>
                     <ul>
                         <li>End the Federal Reserve</li>
                         <li>Require balanced budgets</li>
                         <li>Restore gold/silver money</li>
-                        <li>Term limits for Congress</li>
                     </ul>
-                    <div class="progress-container">
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 73.5%"></div>
-                        </div>
-                        <span class="progress-text">25 of 34 states needed</span>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: 76%"></div>
+                        <span>25 of 34 states needed</span>
                     </div>
                 </div>
                 
                 <div class="solution-card">
-                    <h3>
-                        Personal Protection 
-                        <span class="info-icon" data-info="personal-protection" aria-label="Personal protection explanation">ℹ️</span>
-                    </h3>
+                    <h3>Personal Protection</h3>
                     <ul>
-                        <li>Buy gold and silver coins</li>
+                        <li>Buy gold and silver</li>
                         <li>Get Bitcoin (decentralized money)</li>
-                        <li>Avoid unnecessary debt</li>
+                        <li>Avoid debt when possible</li>
                         <li>Build local communities</li>
-                        <li>Learn practical skills</li>
-                        <li>Support local businesses</li>
                     </ul>
                 </div>
                 
                 <div class="solution-card">
-                    <h3>
-                        Spread Awareness 
-                        <span class="info-icon" data-info="spread-awareness" aria-label="Spread awareness explanation">ℹ️</span>
-                    </h3>
+                    <h3>Spread Awareness</h3>
                     <ul>
                         <li>Share your personal theft number</li>
                         <li>Show friends this analysis</li>
                         <li>Contact representatives</li>
                         <li>Support sound money candidates</li>
-                        <li>Join Article V movement</li>
-                        <li>Educate your community</li>
                     </ul>
                     <button id="shareAnalysis" class="btn-primary">Share Your Analysis</button>
                 </div>
@@ -386,54 +237,20 @@
         </section>
 
         <!-- Footer -->
-        <footer role="contentinfo">
+        <footer>
             <div class="footer-content">
                 <div class="data-sources">
-                    <h4>Live Data Sources</h4>
-                    <p><strong>Real-time updates:</strong> Gold/Silver every 5 minutes, Federal data hourly</p>
-                    <ul>
-                        <li>Federal Reserve Economic Data (FRED)</li>
-                        <li>Metal Price API</li>
-                        <li>Historical government records</li>
-                        <li>Constitutional documents</li>
-                    </ul>
+                    <h4>Data Sources</h4>
+                    <p>Federal Reserve, Treasury.gov, Historical Records, Precious Metals APIs</p>
                 </div>
                 <div class="disclaimer">
-                    <h4>Important Notice</h4>
-                    <p><strong>This is mathematical analysis, not financial advice.</strong></p>
-                    <p>All calculations verified against official government sources. Data updates automatically from Federal Reserve and precious metals markets.</p>
-                    <p><em>Verify all information independently.</em></p>
+                    <p><strong>This is mathematical reality, not financial advice.</strong></p>
+                    <p>Verify all data independently. The correlations speak for themselves.</p>
                 </div>
-                <div class="footer-links">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="https://www.stlouisfed.org/data" target="_blank" rel="noopener">Federal Reserve Data</a></li>
-                        <li><a href="https://www.treasury.gov/resource-center/data-chart-center/Pages/index.aspx" target="_blank" rel="noopener">Treasury Data</a></li>
-                        <li><a href="https://www.conventionofstates.com/" target="_blank" rel="noopener">Article V Convention</a></li>
-                        <li><a href="https://www.constitution.org/" target="_blank" rel="noopener">Constitutional Resources</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Wealth Extraction Analysis Tool | Mathematical Truth, Not Political Opinion</p>
             </div>
         </footer>
     </div>
 
-    <!-- Scripts -->
     <script src="script.js"></script>
-    
-    <!-- Hide loading screen once everything loads -->
-    <script>
-        window.addEventListener('load', function() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }
-        });
-    </script>
 </body>
 </html>
