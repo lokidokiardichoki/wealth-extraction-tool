@@ -1,3 +1,11 @@
+<!-- Constitutional Money Chart -->
+<div class="chart-container" id="constitutionalContainer">
+    <h2>Constitutional Money Suppression <span class="info-icon" data-info="constitutional-money">ℹ️</span></h2>
+    <div class="chart-wrapper">
+        <canvas id="constitutionalChart" aria-label="Gold/silver ratio over time"></canvas>
+    </div>
+</div>
+
 **DETAILED CODE REVIEW - ERROR IDENTIFICATION & CORRECTIONS**
 
 After thorough analysis of all three files, I found 3 minor issues and 2 optimization opportunities. Here are the corrections:
