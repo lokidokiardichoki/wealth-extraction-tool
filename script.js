@@ -453,7 +453,7 @@ function initializeCharts() {
 
 // Create main correlation chart
 function createMasterChart() {
-    const ctx = $('masterChart')?.getContext('2d');
+    const ctx = $('correlationChart')?.getContext('2d');
     if (!ctx) return;
     
     STATE.charts.master = new Chart(ctx, {
