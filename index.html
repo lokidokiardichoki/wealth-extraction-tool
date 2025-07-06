@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inflation: The Hidden Tax Visualized - Advanced Interactive Dashboard</title>
+    <title>The Great Wealth Transfer - Advanced Interactive Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com/3.4.1?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -46,6 +46,34 @@
             background-color: #3B82F6; /* Blue-500 */
             color: white;
         }
+        .info-icon {
+            cursor: pointer;
+            color: #9CA3AF;
+            font-size: 0.9rem;
+            user-select: none;
+            transition: color 0.3s ease;
+        }
+        .info-icon:hover {
+            color: #3B82F6;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            position: relative;
+            margin: 15% auto;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+        }
     </style>
 </head>
 <body class="text-gray-300">
@@ -54,19 +82,13 @@
 
     <div id="mainContent" class="container mx-auto p-4 md:p-6 max-w-7xl">
         <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-1">Inflation: The Hidden Tax Visualized</h1>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-1">The Great Wealth Transfer</h1>
             <p class="text-md text-gray-400">An Interactive Analysis</p>
         </header>
 
         <div class="glass-card p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div class="wage-input space-y-2">
-                    <label for="userWage" class="font-semibold text-white text-sm">Your Current Hourly Wage ($):</label>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="number" id="userWage" placeholder="15.00" step="0.01" class="bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 w-full sm:w-32 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <button onclick="updatePersonalData()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-300 w-full sm:w-auto">Calculate</button>
-                    </div>
-                </div>
+                <!-- Date Range Sliders -->
                 <div class="date-controls space-y-3">
                     <div class="flex flex-col">
                         <label for="startYear" class="mb-1 font-semibold text-white text-sm">Start Year: <span id="startYearDisplay" class="font-bold text-blue-400">1971</span></label>
@@ -75,6 +97,14 @@
                     <div class="flex flex-col">
                         <label for="endYear" class="mb-1 font-semibold text-white text-sm">End Year: <span id="endYearDisplay" class="font-bold text-blue-400">2025</span></label>
                         <input type="range" id="endYear" min="1901" max="2025" value="2025" oninput="updateDateRange()" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                <!-- Wage Input -->
+                <div class="wage-input space-y-2">
+                    <label for="userWage" class="font-semibold text-white text-sm">Your Current Hourly Wage ($):</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="number" id="userWage" placeholder="15.00" step="0.01" class="bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 w-full sm:w-32 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <button onclick="updatePersonalData()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-300 w-full sm:w-auto">Calculate</button>
                     </div>
                 </div>
             </div>
@@ -123,9 +153,42 @@
             </div>
         </div>
 
+        <footer class="mt-8 glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-4">Key Events & Data Sources</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                <div>
+                    <h3 class="font-bold text-blue-400">1913 - Federal Reserve Created</h3>
+                    <p class="text-gray-400 mt-1">The Federal Reserve Act established a private central bank, giving it a monopoly over the nation's currency and credit.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-400">1933 - Gold Confiscated</h3>
+                    <p class="text-gray-400 mt-1">Executive Order 6102 criminalized the possession of monetary gold by U.S. citizens, forcing them to turn it in for a fixed price.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-400">1944 - Bretton Woods</h3>
+                    <p class="text-gray-400 mt-1">The U.S. dollar was established as the world's reserve currency, pegged to gold at $35/oz for international settlement.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-400">1971 - The Nixon Shock</h3>
+                    <p class="text-gray-400 mt-1">President Nixon unilaterally severed the U.S. dollar's convertibility to gold, creating a pure fiat currency system.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-400">2008 - Financial Crisis</h3>
+                    <p class="text-gray-400 mt-1">A global banking crisis led to massive bailouts and the start of large-scale "Quantitative Easing" (money printing).</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-400">2020 - COVID-19 Pandemic</h3>
+                    <p class="text-gray-400 mt-1">The global response triggered unprecedented levels of money printing and government spending worldwide.</p>
+                </div>
+            </div>
+            <div class="mt-6 border-t border-slate-700 pt-4">
+                <p class="text-xs text-gray-500 text-center">Data is sourced from official government databases including the St. Louis Federal Reserve (FRED) and is supplemented by live market data for precious metals.</p>
+            </div>
+        </footer>
+
         <div id="infoModal" class="modal">
             <div class="modal-content glass-card">
-                <span class="close absolute right-6 top-4 text-3xl font-bold text-gray-400 hover:text-white cursor-pointer" onclick="closeInfo()">&times;</span>
+                <span id="modalCloseButton" class="absolute top-4 right-6 text-3xl font-bold text-gray-400 hover:text-white cursor-pointer">&times;</span>
                 <h3 id="infoTitle" class="text-2xl font-bold text-white mb-4"></h3>
                 <p id="infoText" class="text-gray-300 leading-relaxed"></p>
             </div>
@@ -166,6 +229,7 @@
     let currentEndYear = 2025;
     let charts = {};
     let unifiedData = [];
+    let currentInfo = null;
 
     // --- CORE LOGIC ---
     function createUnifiedData() {
@@ -193,10 +257,7 @@
         initializeAllCharts();
         updateAllCalculationsAndCharts();
         setupTabs();
-        const mainContent = document.getElementById('mainContent');
-        if (mainContent) {
-            mainContent.classList.remove('invisible');
-        }
+        document.getElementById('mainContent').classList.remove('invisible');
     });
     
     // --- UI & EVENT HANDLERS ---
@@ -471,13 +532,13 @@
         }
     }
 
-    function closeInfo() {
+    document.getElementById('modalCloseButton').onclick = function() {
         document.getElementById('infoModal').style.display = 'none';
     }
 
     window.onclick = function(event) {
         if (event.target === document.getElementById('infoModal')) {
-            closeInfo();
+            document.getElementById('infoModal').style.display = 'none';
         }
     }
     </script>
