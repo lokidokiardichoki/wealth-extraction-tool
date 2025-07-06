@@ -23,6 +23,7 @@ const infoData = {
     debtToGdp: { title: "U.S. National Debt as a % of GDP", text: "This chart shows the total national debt as a percentage of the nation's Gross Domestic Product (GDP). It is a key indicator of a country's financial health, measuring its ability to pay back its debts. A rising ratio indicates that debt is growing faster than the economy that supports it." },
     purchasingPower: { title: "Dollar Purchasing Power Loss", text: "This shows how the dollar has lost 96%+ of its purchasing power since 1913. What $1 could buy in 1913 now costs over $25. This is the 'inflation tax' - a hidden tax on everyone who holds dollars." },
     wageComparison: { title: "Your Wage vs Real Benchmarks", text: "This chart compares three wage metrics over time. Gold-Adjusted Wage: What you should earn if wages kept pace with gold. Your Wage (Inflation Adjusted): Your current wage, adjusted backwards for historical inflation to show its equivalent purchasing power in past years. Minimum Wage: The official federal minimum wage." },
+    goldSilverPrices: { title: "Gold & Silver Prices", text: "This chart shows the historical price of gold and silver in U.S. dollars. As the dollar is debased, the prices of these precious metals, considered real money, tend to rise over the long term." }
 };
 
 // --- GLOBAL STATE ---
@@ -167,6 +168,12 @@ function updateChartData() {
     charts.wageComparison.data.datasets[1].data = dataSlice.map(d => d.cpi && latestCpiData.cpi ? currentUserWage * (d.cpi / latestCpiData.cpi) : null);
     charts.wageComparison.data.datasets[2].data = dataSlice.map(d => d.minimumWage);
     charts.wageComparison.update('none');
+    
+    // Gold and Silver Prices Chart
+    charts.goldSilverPrices.data.labels = dateLabels;
+    charts.goldSilverPrices.data.datasets[0].data = dataSlice.map(d => d.gold);
+    charts.goldSilverPrices.data.datasets[1].data = dataSlice.map(d => d.silver);
+    charts.goldSilverPrices.update('none');
 }
 
 function getDynamicAnnotations(startYear, endYear) {
@@ -263,6 +270,18 @@ function initializeAllCharts() {
                 { label: 'Minimum Wage ($)', borderColor: '#6B7280', stepped: true, pointRadius: 0, borderWidth: 2 }
             ]},
             options: { ...defaultChartOptions(), scales: { ...defaultChartOptions().scales, y: { type: 'linear', beginAtZero: true, title: { display: true, text: 'Dollars per Hour', color: '#9CA3AF' }, ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }}}
+        },
+        goldSilverPrices: {
+            ctx: document.getElementById('goldSilverPricesChart').getContext('2d'),
+            type: 'line',
+            data: { datasets: [
+                { label: 'Gold Price ($/oz)', borderColor: '#FBBF24', yAxisID: 'y', tension: 0.2, pointRadius: 0, borderWidth: 2 },
+                { label: 'Silver Price ($/oz)', borderColor: '#D1D5DB', yAxisID: 'y1', tension: 0.2, pointRadius: 0, borderWidth: 2 }
+            ]},
+            options: { ...defaultChartOptions(), scales: { ...defaultChartOptions().scales,
+                y: { type: 'logarithmic', position: 'left', title: { display: true, text: 'Gold Price ($)', color: '#FBBF24' }, ticks: { color: '#FBBF24' }, grid: { color: 'rgba(251, 191, 36, 0.1)' } },
+                y1: { type: 'logarithmic', position: 'right', title: { display: true, text: 'Silver Price ($)', color: '#D1D5DB' }, ticks: { color: '#D1D5DB' }, grid: { drawOnChartArea: false } }
+            }}
         }
     };
 
