@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAllCharts();
     updateAllCalculationsAndCharts();
     setupTabs();
-    document.getElementById('mainContent').classList.remove('invisible');
 });
 
 // --- UI & EVENT HANDLERS ---
