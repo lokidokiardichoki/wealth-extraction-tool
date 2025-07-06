@@ -58,10 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAllCharts();
     updateAllCalculationsAndCharts();
     setupTabs();
-    const mainContent = document.getElementById('mainContent');
-    if (mainContent) {
-        mainContent.classList.remove('invisible');
-    }
+    document.getElementById('mainContent').classList.remove('invisible');
 });
 
 // --- UI & EVENT HANDLERS ---
@@ -335,13 +332,13 @@ function setupCrosshairSync() {
         }
     }
 
-    function closeInfo() {
+    document.getElementById('modalCloseButton').onclick = function() {
         document.getElementById('infoModal').style.display = 'none';
     }
 
     window.onclick = function(event) {
         if (event.target === document.getElementById('infoModal')) {
-            closeInfo();
+            document.getElementById('infoModal').style.display = 'none';
         }
     }
     </script>
