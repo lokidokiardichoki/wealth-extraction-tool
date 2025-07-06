@@ -1,7 +1,6 @@
 body {
     font-family: 'Inter', sans-serif;
     background: #0F172A; /* Slate-900 */
-    overflow: hidden; /* Hide scrollbars from animated background */
 }
 #background-animation {
     position: fixed;
