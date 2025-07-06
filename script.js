@@ -18,7 +18,7 @@ const historicalEvents = [
 ];
 
 const infoData = {
-    indexedGrowth: { title: "Indexed Growth", text: "This chart shows the percentage growth of Gold, Silver, the Federal Debt, and the Minimum Wage, starting from a baseline of 100 in your selected start year. It makes it easy to compare their growth rates on an equal footing. The divergence of the lines clearly shows how wages have stagnated while other metrics have exploded." },
+    indexedGrowth: { title: "Indexed Growth", text: "This chart shows the percentage growth of Gold and the Federal Debt, starting from a baseline of 100 in your selected start year. It makes it easy to compare their growth rates on an equal footing. The divergence of the lines clearly shows how debt and the price of real money have exploded." },
     laborValueInMetals: { title: "Labor Value in Precious Metals", text: "This chart shows how many ounces of gold or silver one hour of minimum wage labor could buy. It is a direct measure of the real value of labor. The downward trend illustrates how, even as nominal dollar wages have risen, their actual purchasing power in terms of real money has collapsed." },
     debtToGdp: { title: "U.S. National Debt as a % of GDP", text: "This chart shows the total national debt as a percentage of the nation's Gross Domestic Product (GDP). It is a key indicator of a country's financial health, measuring its ability to pay back its debts. A rising ratio indicates that debt is growing faster than the economy that supports it." },
     purchasingPower: { title: "Dollar Purchasing Power Loss", text: "This shows how the dollar has lost 96%+ of its purchasing power since 1913. What $1 could buy in 1913 now costs over $25. This is the 'inflation tax' - a hidden tax on everyone who holds dollars." },
@@ -131,13 +131,19 @@ function filterDataByDateRange(data) {
 function updateChartData() {
     const dataSlice = filterDataByDateRange(unifiedData);
     const dateLabels = dataSlice.map(d => new Date(d.year, 0, 1));
+    const dynamicAnnotations = getDynamicAnnotations(currentStartYear, currentEndYear);
+    
+    Object.values(charts).forEach(chart => {
+        chart.options.scales.x.min = new Date(currentStartYear, 0, 1);
+        chart.options.scales.x.max = new Date(currentEndYear, 0, 1);
+        chart.options.plugins.annotation.annotations = dynamicAnnotations;
+    });
 
     // Indexed Growth Chart
     const baseValues = dataSlice[0] || {};
     charts.indexedGrowth.data.labels = dateLabels;
     charts.indexedGrowth.data.datasets[0].data = dataSlice.map(d => baseValues.gold ? (d.gold / baseValues.gold) * 100 : null);
     charts.indexedGrowth.data.datasets[1].data = dataSlice.map(d => baseValues.federalDebt ? (d.federalDebt / baseValues.federalDebt) * 100 : null);
-    charts.indexedGrowth.data.datasets[2].data = dataSlice.map(d => baseValues.minimumWage ? (d.minimumWage / baseValues.minimumWage) * 100 : null);
     charts.indexedGrowth.update('none');
 
     // Labor Value in Metals Chart
@@ -167,6 +173,32 @@ function updateChartData() {
     charts.wageComparison.update('none');
 }
 
+function getDynamicAnnotations(startYear, endYear) {
+    const annotations = {};
+    historicalEvents
+        .filter(event => event.year >= startYear && event.year <= endYear)
+        .forEach(event => {
+            annotations[`line${event.year}`] = {
+                type: 'line',
+                xMin: new Date(event.year, 0, 1),
+                xMax: new Date(event.year, 0, 1),
+                borderColor: 'rgba(107, 114, 128, 0.5)',
+                borderWidth: 1,
+                borderDash: [6, 6],
+                label: {
+                    content: event.label,
+                    display: true,
+                    position: 'start',
+                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                    font: { size: 9 },
+                    color: '#9CA3AF',
+                    yAdjust: -10
+                }
+            };
+        });
+    return annotations;
+}
+
 function initializeAllCharts() {
     const defaultChartOptions = () => ({
         responsive: true, maintainAspectRatio: false, animation: { duration: 800, easing: 'easeOutQuart' },
@@ -180,28 +212,7 @@ function initializeAllCharts() {
                 borderColor: 'rgba(51, 65, 85, 0.5)',
                 borderWidth: 1,
             },
-            annotation: {
-                annotations: historicalEvents.reduce((acc, event) => {
-                    acc[`line${event.year}`] = {
-                        type: 'line',
-                        xMin: new Date(event.year, 0, 1),
-                        xMax: new Date(event.year, 0, 1),
-                        borderColor: 'rgba(107, 114, 128, 0.5)',
-                        borderWidth: 1,
-                        borderDash: [6, 6],
-                        label: {
-                            content: event.label,
-                            display: true,
-                            position: 'start',
-                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                            font: { size: 9 },
-                            color: '#9CA3AF',
-                            yAdjust: -10
-                        }
-                    };
-                    return acc;
-                }, {})
-            }
+            annotation: { annotations: {} }
         },
         scales: {
             x: { 
@@ -219,8 +230,7 @@ function initializeAllCharts() {
             type: 'line',
             data: { datasets: [
                 { label: 'Gold Price', borderColor: '#FBBF24', tension: 0.2, pointRadius: 0, borderWidth: 2 },
-                { label: 'Federal Debt', borderColor: '#EF4444', tension: 0.2, pointRadius: 0, borderWidth: 2 },
-                { label: 'Minimum Wage', borderColor: '#6B7280', stepped: true, pointRadius: 0, borderWidth: 2 }
+                { label: 'Federal Debt', borderColor: '#EF4444', tension: 0.2, pointRadius: 0, borderWidth: 2 }
             ]},
             options: { ...defaultChartOptions(), scales: { ...defaultChartOptions().scales, y: { type: 'logarithmic', title: { display: true, text: 'Growth (Index, Start Year = 100)', color: '#9CA3AF' }, ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }}}
         },
