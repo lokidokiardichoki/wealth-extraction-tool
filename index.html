@@ -481,8 +481,8 @@
                     { label: 'Silver Price ($/oz)', borderColor: '#D1D5DB', yAxisID: 'y1', tension: 0.2, pointRadius: 0, borderWidth: 2 }
                 ]},
                 options: { ...defaultChartOptions(), scales: { ...defaultChartOptions().scales,
-                    y: { type: 'logarithmic', position: 'left', title: { display: true, text: 'Gold Price ($)', color: '#FBBF24' }, ticks: { color: '#FBBF24' }, grid: { color: 'rgba(251, 191, 36, 0.1)' } },
-                    y1: { type: 'logarithmic', position: 'right', title: { display: true, text: 'Silver Price ($)', color: '#D1D5DB' }, ticks: { color: '#D1D5DB' }, grid: { drawOnChartArea: false } }
+                    y: { type: 'linear', position: 'left', title: { display: true, text: 'Gold Price ($)', color: '#FBBF24' }, ticks: { color: '#FBBF24' }, grid: { color: 'rgba(251, 191, 36, 0.1)' } },
+                    y1: { type: 'linear', position: 'right', title: { display: true, text: 'Silver Price ($)', color: '#D1D5DB' }, ticks: { color: '#D1D5DB' }, grid: { drawOnChartArea: false } }
                 }}
             }
         };
